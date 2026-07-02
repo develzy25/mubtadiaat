@@ -4,8 +4,19 @@ import { drizzle } from 'drizzle-orm/d1';
 import * as schema from '../db/schema';
 
 // This function returns the betterAuth instance configured with the D1 database binding
-export const getAuth = (env: { DB: D1Database, BETTER_AUTH_SECRET: string, BETTER_AUTH_URL: string }) => {
+export const getAuth = (
+  env: { DB: D1Database; BETTER_AUTH_SECRET: string; BETTER_AUTH_URL: string },
+  requestUrl?: string
+) => {
   const db = drizzle(env.DB, { schema });
+
+  // Dynamically set baseURL if requestUrl is provided to support localhost and deployed dev url simultaneously
+  let finalBaseURL = env.BETTER_AUTH_URL;
+  if (requestUrl) {
+    const urlObj = new URL(requestUrl);
+    // baseURL must point to the base auth endpoint (e.g. https://domain.com/api/auth)
+    finalBaseURL = `${urlObj.origin}/api/auth`;
+  }
   
   return betterAuth({
     database: drizzleAdapter(db, {
@@ -15,9 +26,12 @@ export const getAuth = (env: { DB: D1Database, BETTER_AUTH_SECRET: string, BETTE
     emailAndPassword: {
       enabled: true, // We enable standard email/password login
     },
-    trustedOrigins: ['http://localhost:5173'],
+    trustedOrigins: [
+      'http://localhost:5173', 
+      'https://mubtadiaat.pages.dev',
+      'https://5611eff5.mubtadiaat.pages.dev'
+    ],
     secret: env.BETTER_AUTH_SECRET,
-    baseURL: env.BETTER_AUTH_URL,
-    // Add additional settings (JWT, etc.) here
+    baseURL: finalBaseURL,
   });
 };

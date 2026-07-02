@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Lock, LogIn, UserPlus, User, Eye, EyeOff } from 'lucide-react';
+import { Lock, LogIn, UserPlus, User, Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { GlassCard } from '../../components/ui/GlassCard';
 import { SoftInput } from '../../components/ui/SoftInput';
@@ -10,7 +10,7 @@ import { signIn, signUp } from '../../lib/auth.client';
 export const LoginPage = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -22,10 +22,13 @@ export const LoginPage = () => {
     setLoading(true);
     setError('');
 
+    // Format username to simulated email under the hood for BetterAuth compliance
+    const formattedEmail = username.includes('@') ? username : `${username}@lirboyo.net`;
+
     try {
       if (isLogin) {
         const { error: signInError } = await signIn.email({
-          email,
+          email: formattedEmail,
           password,
         });
         
@@ -37,14 +40,13 @@ export const LoginPage = () => {
       } else {
         const { error: signUpError } = await signUp.email({
           name,
-          email,
+          email: formattedEmail,
           password,
         });
 
         if (signUpError) {
           setError(signUpError.message || 'Gagal mendaftar akun');
         } else {
-          // Auto login after sign up or just navigate
           navigate('/dashboard');
         }
       }
@@ -129,12 +131,12 @@ export const LoginPage = () => {
             )}
 
             <SoftInput
-              label="Alamat Email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="ustadz@lirboyo.net"
-              leftIcon={<Mail className="w-5 h-5" />}
+              label="Nama Pengguna (Username)"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Masukkan username Anda..."
+              leftIcon={<User className="w-5 h-5" />}
               required
             />
             
@@ -185,6 +187,16 @@ export const LoginPage = () => {
           </form>
         </GlassCard>
       </motion.div>
+
+      {/* Corporate Address & Copyright Footer */}
+      <footer className="w-full max-w-md text-center text-[10px] text-slate-400 font-medium mt-8 px-4 z-10 flex flex-col gap-1 select-none">
+        <p className="leading-relaxed">
+          p3hmlirboyo@gmail.com &nbsp;|&nbsp; Jl. KH. Abdul Karim Po. Box 140 Lirboyo Kota Kediri Jawa Timur &nbsp;|&nbsp; Telp. 0354-772197
+        </p>
+        <p className="mt-1 font-bold text-slate-500">
+          P3HM LIRBOYO &copy; Copyright {new Date().getFullYear()}. All Rights Reserved
+        </p>
+      </footer>
     </div>
   );
 };

@@ -36,11 +36,14 @@ app.route('/api/attendance', attendanceRoutes);
 
 // Better Auth API routes handler
 app.all('/api/auth/*', (c) => {
-  const auth = getAuth({
-    DB: c.env.DB,
-    BETTER_AUTH_SECRET: c.env.BETTER_AUTH_SECRET,
-    BETTER_AUTH_URL: c.env.BETTER_AUTH_URL,
-  });
+  const auth = getAuth(
+    {
+      DB: c.env.DB,
+      BETTER_AUTH_SECRET: c.env.BETTER_AUTH_SECRET,
+      BETTER_AUTH_URL: c.env.BETTER_AUTH_URL,
+    },
+    c.req.url
+  );
   return auth.handler(c.req.raw);
 });
 
