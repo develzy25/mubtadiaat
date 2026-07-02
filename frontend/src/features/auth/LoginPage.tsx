@@ -35,6 +35,11 @@ export const LoginPage = () => {
         if (signInError) {
           setError(signInError.message || 'Kredensial tidak valid');
         } else {
+          if (password === 'mubtadiaat123') {
+            localStorage.setItem('FORCE_PASSWORD_CHANGE', 'true');
+          } else {
+            localStorage.removeItem('FORCE_PASSWORD_CHANGE');
+          }
           navigate('/dashboard');
         }
       } else {

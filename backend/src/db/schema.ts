@@ -39,7 +39,7 @@ const authTimestampFields = {
 export const users = sqliteTable('users', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
-  email: text('email').unique().notNull(),
+  email: text('username').unique().notNull(),
   emailVerified: integer('email_verified', { mode: 'boolean' }).notNull().default(false),
   image: text('image'),
   ...authTimestampFields,
