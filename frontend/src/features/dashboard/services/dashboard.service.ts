@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.DEV ? 'http://localhost:8787/api' : '/api';
+const API_URL = import.meta.env.DEV ? 'http://localhost:8787/api' : 'https://backend.eppds.workers.dev/api';
 
 export interface DashboardSummaryResponse {
   success: boolean;

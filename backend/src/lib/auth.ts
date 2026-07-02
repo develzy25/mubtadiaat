@@ -18,6 +18,21 @@ export const getAuth = (
     finalBaseURL = `${urlObj.origin}/api/auth`;
   }
   
+  const origins = [
+    'http://localhost:5173',
+    'https://mubtadiaat.pages.dev'
+  ];
+
+  if (requestUrl) {
+    try {
+      const urlObj = new URL(requestUrl);
+      const origin = urlObj.origin;
+      if (origin.endsWith('.pages.dev') && !origins.includes(origin)) {
+        origins.push(origin);
+      }
+    } catch (_) {}
+  }
+
   return betterAuth({
     database: drizzleAdapter(db, {
       provider: 'sqlite', // using d1 sqlite
@@ -26,11 +41,7 @@ export const getAuth = (
     emailAndPassword: {
       enabled: true, // We enable standard email/password login
     },
-    trustedOrigins: [
-      'http://localhost:5173', 
-      'https://mubtadiaat.pages.dev',
-      'https://5611eff5.mubtadiaat.pages.dev'
-    ],
+    trustedOrigins: origins,
     secret: env.BETTER_AUTH_SECRET,
     baseURL: finalBaseURL,
   });
