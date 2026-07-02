@@ -4,8 +4,10 @@
   "description": "Sistem Informasi Manajemen P3HM Lirboyo",
   "start_url": "/",
   "display": "standalone",
+  "display_override": ["standalone", "window-controls-overlay", "minimal-ui"],
+  "orientation": "portrait",
   "background_color": "#F0F4F8",
-  "theme_color": "#1E40AF",
+  "theme_color": "#F0F4F8",
   "icons": [
     {
       "src": "/logo192.png",

@@ -133,6 +133,8 @@ export const LoginPage = () => {
                   placeholder="Ust. Ahmad"
                   leftIcon={<User className="w-5 h-5" />}
                   required={!isLogin}
+                  autoComplete="off"
+                  spellCheck={false}
                 />
               </motion.div>
             )}
@@ -145,6 +147,8 @@ export const LoginPage = () => {
               placeholder="Masukkan username Anda..."
               leftIcon={<User className="w-5 h-5" />}
               required
+              autoComplete="off"
+              spellCheck={false}
             />
             
             <SoftInput
@@ -154,6 +158,8 @@ export const LoginPage = () => {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               leftIcon={<Lock className="w-5 h-5" />}
+              autoComplete="current-password"
+              spellCheck={false}
               rightIcon={
                 <button 
                   type="button" 
