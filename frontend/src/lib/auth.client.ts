@@ -8,13 +8,14 @@ export const authClient = createAuthClient({
         onRequest: (context) => {
             const token = localStorage.getItem("better-auth.session_token");
             if (token) {
-                const headers = context.headers || {};
-                if (headers instanceof Headers) {
-                    headers.set("Authorization", `Bearer ${token}`);
-                } else {
-                    (headers as any)["Authorization"] = `Bearer ${token}`;
+                if (!context.headers) {
+                    context.headers = new Headers();
                 }
-                context.headers = headers;
+                if (context.headers instanceof Headers) {
+                    context.headers.set("Authorization", `Bearer ${token}`);
+                } else {
+                    (context.headers as any)["Authorization"] = `Bearer ${token}`;
+                }
             }
             return context;
         },
