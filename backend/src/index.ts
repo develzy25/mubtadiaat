@@ -15,8 +15,18 @@ const app = new Hono<{ Bindings: Bindings }>();
 
 app.use('*', logger());
 app.use('*', cors({
-  origin: ['http://localhost:5173'], // Vite default dev server
-  allowHeaders: ['Content-Type', 'Authorization'],
+  origin: (origin) => {
+    if (!origin) return 'https://mubtadiaat.pages.dev';
+    if (
+      origin === 'http://localhost:5173' ||
+      origin === 'https://mubtadiaat.pages.dev' ||
+      origin.endsWith('.mubtadiaat.pages.dev')
+    ) {
+      return origin;
+    }
+    return 'https://mubtadiaat.pages.dev';
+  },
+  allowHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
   allowMethods: ['POST', 'GET', 'OPTIONS'],
   exposeHeaders: ['Content-Length'],
   maxAge: 600,

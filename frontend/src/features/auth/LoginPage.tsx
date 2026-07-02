@@ -107,6 +107,7 @@ export const LoginPage = () => {
             <AnimatePresence>
               {error && (
                 <motion.div 
+                  key="error-box"
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
@@ -119,6 +120,7 @@ export const LoginPage = () => {
 
             {!isLogin && (
               <motion.div
+                key="register-box"
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
