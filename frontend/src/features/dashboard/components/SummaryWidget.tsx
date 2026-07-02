@@ -2,15 +2,28 @@ import React from 'react';
 import { Calendar, Users, CheckCircle, AlertCircle, FileText } from 'lucide-react';
 import { GlassCard } from '../../../components/ui/GlassCard';
 
-export const SummaryWidget: React.FC = () => {
-  // Mock data matching the Mustahiq Dashboard blueprint for Charis Wahyudi (Bagian A)
+interface SummaryWidgetProps {
+  totalSantri: number;
+  attendance: {
+    hadir: number;
+    sakit: number;
+    izin: number;
+    alpha: number;
+  };
+}
+
+export const SummaryWidget: React.FC<SummaryWidgetProps> = ({ totalSantri, attendance }) => {
+  // Compute stats dynamically from database parameters
+  const sudahDiisi = (attendance.hadir || 0) + (attendance.sakit || 0) + (attendance.izin || 0) + (attendance.alpha || 0);
+  const belumDiisi = Math.max(0, totalSantri - sudahDiisi);
+  const persentase = totalSantri > 0 ? Math.round((sudahDiisi / totalSantri) * 100) : 0;
+  
   const stats = {
-    jadwalTamrin: 2,     // Jumlah Jadwal Tamrin Hari Ini
-    jumlahSantri: 5,     // Jumlah Santri Bagian A
-    sudahDiisi: 4,       // Jumlah Nilai Sudah Diisi
-    belumDiisi: 1,       // Jumlah Nilai Belum Diisi
-    jumlahHER: 1,        // Jumlah HER
-    persentase: 80,      // Persentase Penyelesaian
+    jadwalTamrin: totalSantri > 0 ? 2 : 0, // Number of tamrin active classes
+    jumlahSantri: totalSantri,
+    sudahDiisi,
+    belumDiisi,
+    persentase,
   };
 
   const cards = [
