@@ -84,10 +84,6 @@ export const AdminBlokKamarPage = () => {
     loadData();
   }, []);
 
-  const saveBlokList = (list: BlokItem[]) => {
-    setBlokList(list);
-    localStorage.setItem(LS_BLOK, JSON.stringify(list));
-  };
 
   // Blok CRUD
   const handleSaveBlok = async (e: React.FormEvent) => {

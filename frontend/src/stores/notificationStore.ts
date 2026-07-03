@@ -11,6 +11,7 @@ export interface ConfirmDialog {
   isOpen: boolean;
   title: string;
   message: string;
+  severity?: 'warning' | 'danger' | 'info';
   onConfirm: () => void;
   onCancel?: () => void;
 }
@@ -20,7 +21,7 @@ interface NotificationState {
   confirmDialog: ConfirmDialog | null;
   showToast: (message: string, type?: Toast['type'], duration?: number) => void;
   dismissToast: (id: string) => void;
-  showConfirm: (title: string, message: string, onConfirm: () => void, onCancel?: () => void) => void;
+  showConfirm: (title: string, message: string, severityOrConfirm: (() => void) | 'warning' | 'danger' | 'info', onConfirmOrCancel?: (() => void) | null, onCancel?: () => void) => void;
   dismissConfirm: () => void;
 }
 
@@ -46,18 +47,22 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     }));
   },
 
-  showConfirm: (title, message, onConfirm, onCancel) => {
+  showConfirm: (title, message, severityOrConfirm, onConfirmOrCancel, onCancel) => {
+    const severity = typeof severityOrConfirm === 'string' ? severityOrConfirm : undefined;
+    const onConfirm = typeof severityOrConfirm === 'function' ? severityOrConfirm : (onConfirmOrCancel as () => void);
+    const cancelFn = typeof severityOrConfirm === 'function' ? (onConfirmOrCancel as (() => void) | undefined) : onCancel;
     set({
       confirmDialog: {
         isOpen: true,
         title,
         message,
+        severity,
         onConfirm: () => {
           onConfirm();
           get().dismissConfirm();
         },
         onCancel: () => {
-          if (onCancel) onCancel();
+          if (cancelFn) cancelFn();
           get().dismissConfirm();
         }
       }
