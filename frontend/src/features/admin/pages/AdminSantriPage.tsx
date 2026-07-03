@@ -17,105 +17,11 @@ import {
   deleteSantri,
   type SantriAdmin 
 } from '../services/admin.service';
+import { wilayahService, type Province, type Regency, type District, type Village } from '../services/wilayah.service';
 import { GlassCard } from '../../../components/ui/GlassCard';
 import { PremiumButton } from '../../../components/ui/PremiumButton';
 import { SoftInput } from '../../../components/ui/SoftInput';
 import { Modal } from '../../../components/ui/Modal';
-
-// Mock Cascading Data for Indonesian Regions
-interface Kelurahan {
-  name: string;
-  postalCode: string;
-}
-
-interface Kecamatan {
-  name: string;
-  kelurahans: Kelurahan[];
-}
-
-interface Kabupaten {
-  name: string;
-  kecamatans: Kecamatan[];
-}
-
-interface Provinsi {
-  name: string;
-  kabupatens: Kabupaten[];
-}
-
-const REGION_DATA: Provinsi[] = [
-  {
-    name: 'Jawa Timur',
-    kabupatens: [
-      {
-        name: 'Kediri',
-        kecamatans: [
-          {
-            name: 'Mojoroto',
-            kelurahans: [
-              { name: 'Lirboyo', postalCode: '64117' },
-              { name: 'Bandar Kidul', postalCode: '64118' },
-              { name: 'Campurejo', postalCode: '64115' }
-            ]
-          },
-          {
-            name: 'Semen',
-            kelurahans: [
-              { name: 'Semen', postalCode: '64161' },
-              { name: 'Puhsarang', postalCode: '64162' }
-            ]
-          }
-        ]
-      },
-      {
-        name: 'Surabaya',
-        kecamatans: [
-          {
-            name: 'Gubeng',
-            kelurahans: [
-              { name: 'Airlangga', postalCode: '60286' },
-              { name: 'Gubeng', postalCode: '60281' }
-            ]
-          }
-        ]
-      }
-    ]
-  },
-  {
-    name: 'Jawa Tengah',
-    kabupatens: [
-      {
-        name: 'Semarang',
-        kecamatans: [
-          {
-            name: 'Tembalang',
-            kelurahans: [
-              { name: 'Tembalang', postalCode: '50275' },
-              { name: 'Bulusan', postalCode: '50277' }
-            ]
-          }
-        ]
-      }
-    ]
-  },
-  {
-    name: 'DKI Jakarta',
-    kabupatens: [
-      {
-        name: 'Jakarta Selatan',
-        kecamatans: [
-          {
-            name: 'Kebayoran Baru',
-            kelurahans: [
-              { name: 'Senayan', postalCode: '12190' },
-              { name: 'Selong', postalCode: '12110' }
-            ]
-          }
-        ]
-      }
-    ]
-  }
-];
 
 export const AdminSantriPage = () => {
   const [santriList, setSantriList] = useState<SantriAdmin[]>([]);
@@ -153,10 +59,22 @@ export const AdminSantriPage = () => {
   // Custom Fields (JSON metadata)
   const [customFields, setCustomFields] = useState<{ key: string; value: string }[]>([]);
 
-  // List cascading options based on selections
-  const [kabupatenOptions, setKabupatenOptions] = useState<Kabupaten[]>([]);
-  const [kecamatanOptions, setKecamatanOptions] = useState<Kecamatan[]>([]);
-  const [kelurahanOptions, setKelurahanOptions] = useState<Kelurahan[]>([]);
+  // Wilayah API state
+  const [provinsiOptions, setProvinsiOptions]   = useState<Province[]>([]);
+  const [kabupatenOptions, setKabupatenOptions] = useState<Regency[]>([]);
+  const [kecamatanOptions, setKecamatanOptions] = useState<District[]>([]);
+  const [kelurahanOptions, setKelurahanOptions] = useState<Village[]>([]);
+
+  // Loading per level
+  const [loadingProvinsi,  setLoadingProvinsi]  = useState(false);
+  const [loadingKabupaten, setLoadingKabupaten] = useState(false);
+  const [loadingKecamatan, setLoadingKecamatan] = useState(false);
+  const [loadingKelurahan, setLoadingKelurahan] = useState(false);
+
+  // Store selected IDs (needed for cascading API calls)
+  const [selectedProvinsiId,  setSelectedProvinsiId]  = useState('');
+  const [selectedKabupatenId, setSelectedKabupatenId] = useState('');
+  const [selectedKecamatanId, setSelectedKecamatanId] = useState('');
 
   // Reload data
   const loadData = async () => {
@@ -181,67 +99,65 @@ export const AdminSantriPage = () => {
     loadData();
   }, [classFilter, statusFilter]);
 
-  // Handle cascading region updates
+  // Load provinces on mount
   useEffect(() => {
-    const prov = REGION_DATA.find(p => p.name === formProvinsi);
-    if (prov) {
-      setKabupatenOptions(prov.kabupatens);
-      // Reset dependent selections if not matching
-      if (!prov.kabupatens.some(k => k.name === formKabupaten)) {
-        setFormKabupaten('');
-        setFormKecamatan('');
-        setFormKelurahan('');
-        setFormKodePos('');
-      }
-    } else {
+    setLoadingProvinsi(true);
+    wilayahService.getProvinces()
+      .then(setProvinsiOptions)
+      .catch(console.error)
+      .finally(() => setLoadingProvinsi(false));
+  }, []);
+
+  // Load regencies when province changes
+  useEffect(() => {
+    if (!selectedProvinsiId) {
       setKabupatenOptions([]);
+      setKecamatanOptions([]);
+      setKelurahanOptions([]);
+      setSelectedKabupatenId('');
+      setSelectedKecamatanId('');
       setFormKabupaten('');
       setFormKecamatan('');
       setFormKelurahan('');
-      setFormKodePos('');
+      return;
     }
-  }, [formProvinsi]);
+    setLoadingKabupaten(true);
+    wilayahService.getRegencies(selectedProvinsiId)
+      .then(setKabupatenOptions)
+      .catch(console.error)
+      .finally(() => setLoadingKabupaten(false));
+  }, [selectedProvinsiId]);
 
+  // Load districts when regency changes
   useEffect(() => {
-    const kab = kabupatenOptions.find(k => k.name === formKabupaten);
-    if (kab) {
-      setKecamatanOptions(kab.kecamatans);
-      if (!kab.kecamatans.some(k => k.name === formKecamatan)) {
-        setFormKecamatan('');
-        setFormKelurahan('');
-        setFormKodePos('');
-      }
-    } else {
+    if (!selectedKabupatenId) {
       setKecamatanOptions([]);
+      setKelurahanOptions([]);
+      setSelectedKecamatanId('');
       setFormKecamatan('');
       setFormKelurahan('');
-      setFormKodePos('');
+      return;
     }
-  }, [formKabupaten, kabupatenOptions]);
+    setLoadingKecamatan(true);
+    wilayahService.getDistricts(selectedKabupatenId)
+      .then(setKecamatanOptions)
+      .catch(console.error)
+      .finally(() => setLoadingKecamatan(false));
+  }, [selectedKabupatenId]);
 
+  // Load villages when district changes
   useEffect(() => {
-    const kec = kecamatanOptions.find(k => k.name === formKecamatan);
-    if (kec) {
-      setKelurahanOptions(kec.kelurahans);
-      if (!kec.kelurahans.some(k => k.name === formKelurahan)) {
-        setFormKelurahan('');
-        setFormKodePos('');
-      }
-    } else {
+    if (!selectedKecamatanId) {
       setKelurahanOptions([]);
       setFormKelurahan('');
-      setFormKodePos('');
+      return;
     }
-  }, [formKecamatan, kecamatanOptions]);
-
-  useEffect(() => {
-    const kel = kelurahanOptions.find(k => k.name === formKelurahan);
-    if (kel) {
-      setFormKodePos(kel.postalCode);
-    } else {
-      setFormKodePos('');
-    }
-  }, [formKelurahan, kelurahanOptions]);
+    setLoadingKelurahan(true);
+    wilayahService.getVillages(selectedKecamatanId)
+      .then(setKelurahanOptions)
+      .catch(console.error)
+      .finally(() => setLoadingKelurahan(false));
+  }, [selectedKecamatanId]);
 
   const openAddModal = () => {
     setEditingSantri(null);
@@ -692,63 +608,93 @@ export const AdminSantriPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             {/* Provinsi select */}
             <div className="flex flex-col gap-1">
-              <span className="text-[10px] font-bold text-slate-500 uppercase">Provinsi</span>
+              <span className="text-[10px] font-bold text-slate-500 uppercase">
+                Provinsi {loadingProvinsi && <span className="text-blue-400">...</span>}
+              </span>
               <select
                 value={formProvinsi}
-                onChange={(e) => setFormProvinsi(e.target.value)}
-                className="bg-white border border-slate-200 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-700 outline-hidden"
+                disabled={loadingProvinsi}
+                onChange={(e) => {
+                  const opt = provinsiOptions.find(p => p.name === e.target.value);
+                  setFormProvinsi(e.target.value);
+                  setSelectedProvinsiId(opt?.id || '');
+                  setFormKabupaten('');
+                  setFormKecamatan('');
+                  setFormKelurahan('');
+                  setSelectedKabupatenId('');
+                  setSelectedKecamatanId('');
+                }}
+                className="bg-white border border-slate-200 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-700 outline-hidden disabled:bg-slate-100 disabled:text-slate-400"
               >
                 <option value="">-- Pilih Provinsi --</option>
-                {REGION_DATA.map(p => (
-                  <option key={p.name} value={p.name}>{p.name}</option>
+                {provinsiOptions.map(p => (
+                  <option key={p.id} value={p.name}>{p.name}</option>
                 ))}
               </select>
             </div>
 
             {/* Kabupaten select */}
             <div className="flex flex-col gap-1">
-              <span className="text-[10px] font-bold text-slate-500 uppercase">Kabupaten/Kota</span>
+              <span className="text-[10px] font-bold text-slate-500 uppercase">
+                Kabupaten/Kota {loadingKabupaten && <span className="text-blue-400">...</span>}
+              </span>
               <select
                 value={formKabupaten}
-                disabled={!formProvinsi}
-                onChange={(e) => setFormKabupaten(e.target.value)}
+                disabled={!formProvinsi || loadingKabupaten}
+                onChange={(e) => {
+                  const opt = kabupatenOptions.find(k => k.name === e.target.value);
+                  setFormKabupaten(e.target.value);
+                  setSelectedKabupatenId(opt?.id || '');
+                  setFormKecamatan('');
+                  setFormKelurahan('');
+                  setSelectedKecamatanId('');
+                }}
                 className="bg-white border border-slate-200 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-700 outline-hidden disabled:bg-slate-100 disabled:text-slate-400"
               >
                 <option value="">-- Pilih Kota --</option>
                 {kabupatenOptions.map(k => (
-                  <option key={k.name} value={k.name}>{k.name}</option>
+                  <option key={k.id} value={k.name}>{k.name}</option>
                 ))}
               </select>
             </div>
 
             {/* Kecamatan select */}
             <div className="flex flex-col gap-1">
-              <span className="text-[10px] font-bold text-slate-500 uppercase">Kecamatan</span>
+              <span className="text-[10px] font-bold text-slate-500 uppercase">
+                Kecamatan {loadingKecamatan && <span className="text-blue-400">...</span>}
+              </span>
               <select
                 value={formKecamatan}
-                disabled={!formKabupaten}
-                onChange={(e) => setFormKecamatan(e.target.value)}
+                disabled={!formKabupaten || loadingKecamatan}
+                onChange={(e) => {
+                  const opt = kecamatanOptions.find(k => k.name === e.target.value);
+                  setFormKecamatan(e.target.value);
+                  setSelectedKecamatanId(opt?.id || '');
+                  setFormKelurahan('');
+                }}
                 className="bg-white border border-slate-200 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-700 outline-hidden disabled:bg-slate-100 disabled:text-slate-400"
               >
                 <option value="">-- Pilih Kecamatan --</option>
                 {kecamatanOptions.map(k => (
-                  <option key={k.name} value={k.name}>{k.name}</option>
+                  <option key={k.id} value={k.name}>{k.name}</option>
                 ))}
               </select>
             </div>
 
             {/* Kelurahan select */}
             <div className="flex flex-col gap-1">
-              <span className="text-[10px] font-bold text-slate-500 uppercase">Kelurahan/Desa</span>
+              <span className="text-[10px] font-bold text-slate-500 uppercase">
+                Kelurahan/Desa {loadingKelurahan && <span className="text-blue-400">...</span>}
+              </span>
               <select
                 value={formKelurahan}
-                disabled={!formKecamatan}
+                disabled={!formKecamatan || loadingKelurahan}
                 onChange={(e) => setFormKelurahan(e.target.value)}
                 className="bg-white border border-slate-200 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-700 outline-hidden disabled:bg-slate-100 disabled:text-slate-400"
               >
                 <option value="">-- Pilih Desa --</option>
                 {kelurahanOptions.map(k => (
-                  <option key={k.name} value={k.name}>{k.name}</option>
+                  <option key={k.id} value={k.name}>{k.name}</option>
                 ))}
               </select>
             </div>
