@@ -199,7 +199,12 @@ export const inputRapotBatch = async (c: Context) => {
       const { studentId, rapotId: existingRapotId, izinCount, tanpaIzinCount, nilaiAkhlaq, catatan, predikatOverride, scores } = row;
 
       let rapotId = existingRapotId;
-      const akhlaqScore = (nilaiAkhlaq !== undefined && nilaiAkhlaq !== null) ? Math.max(4, Math.min(8, Number(nilaiAkhlaq))) : 8;
+      
+      // Hitung pengurangan otomatis nilai Akhlaq akibat absensi
+      let akhlaqScore = (nilaiAkhlaq !== undefined && nilaiAkhlaq !== null) ? Math.max(4, Math.min(8, Number(nilaiAkhlaq))) : 8;
+      const izinPenalti = Math.floor(Number(izinCount || 0) / 20);
+      const alphaPenalti = Math.floor(Number(tanpaIzinCount || 0) / 6);
+      akhlaqScore = Math.max(4, akhlaqScore - izinPenalti - alphaPenalti);
 
       if (!rapotId) {
         // Check if header already exists to prevent duplicate key
@@ -251,10 +256,16 @@ export const inputRapotBatch = async (c: Context) => {
       // Insert new scores
       const scoreEntries = scores.map((s: any) => {
         // Calculate Khosh Score with Lirboyo standard rounding (>=0.5 up, <0.5 down)
-        const rawAvg = (Number(s.tamrinScore) + Number(s.ujianScore)) / 2;
+        // Jika Tamrin kosong (0), nilainya = Ujian / 2 (Secara matematis sama dengan (0 + Ujian)/2)
+        const rawAvg = (Number(s.tamrinScore || 0) + Number(s.ujianScore || 0)) / 2;
         let khoshScore = Math.round(rawAvg); // Math.round standard: >= 0.5 rounds up, < 0.5 rounds down.
-        // Clamping to [4, 9] according to pedoman
-        khoshScore = Math.max(4, Math.min(9, khoshScore));
+        
+        // Clamping to [4, 9] generally, but Max 8 for Al-Qur'an and Akhlaq
+        const nameUpper = (s.kitabName || '').toUpperCase();
+        const isQurAnOrAkhlaq = nameUpper.includes('QUR\'AN') || nameUpper.includes('QURAN') || nameUpper.includes('AKHLAQ');
+        const maxScore = isQurAnOrAkhlaq ? 8 : 9;
+        
+        khoshScore = Math.max(4, Math.min(maxScore, khoshScore));
 
         return {
           id: `scr_${crypto.randomUUID()}`,
@@ -471,17 +482,40 @@ export const getRekap = async (c: Context) => {
       };
     });
 
-    // Sum S1, Sum S2
-    const totalS1 = s1Scores.reduce((a, b) => a + b.khoshScore, 0);
-    const totalS2 = s2Scores.reduce((a, b) => a + b.khoshScore, 0);
-    const totalMapelS1 = s1Scores.length;
-    const totalMapelS2 = s2Scores.length;
+    const isExcluded = (kitabName: string) => {
+      const name = kitabName.toUpperCase();
+      return name.includes('QUR') || name.includes('KHOT') || name.includes('IMLA') || name.includes('QIROAH') || name.includes('AKHLAQ') || name.includes('MUHAF');
+    };
+
+    // Calculate full sums (for Prestasi)
+    const fullTotalS1 = s1Scores.reduce((a, b) => a + b.khoshScore, 0);
+    const fullTotalS2 = s2Scores.reduce((a, b) => a + b.khoshScore, 0);
+    const fullTotalMapelS1 = s1Scores.length;
+    const fullTotalMapelS2 = s2Scores.length;
+
+    // Calculate excluded sums (for Rata-rata and UI Jumlah)
+    const filteredS1 = s1Scores.filter(s => !isExcluded(s.kitabName));
+    const filteredS2 = s2Scores.filter(s => !isExcluded(s.kitabName));
+
+    const totalS1 = filteredS1.reduce((a, b) => a + b.khoshScore, 0);
+    const totalS2 = filteredS2.reduce((a, b) => a + b.khoshScore, 0);
+    const totalMapelS1 = filteredS1.length;
+    const totalMapelS2 = filteredS2.length;
 
     const grandTotal = totalS1 + totalS2;
     const grandTotalMapel = totalMapelS1 + totalMapelS2;
     
-    // Rata-rata & Al-Bayan (Predikat)
+    // Rata-rata (menggunakan data yang dikecualikan)
     let rataRata = 0;
+    if (grandTotalMapel > 0) {
+      rataRata = Math.round(grandTotal / grandTotalMapel);
+    } else if (totalMapelS1 > 0) {
+      rataRata = Math.round(totalS1 / totalMapelS1);
+    } else if (totalMapelS2 > 0) {
+      rataRata = Math.round(totalS2 / totalMapelS2);
+    }
+
+    // Al-Bayan (Prestasi) based on full sum
     let nilaiPrestasi = 0;
     let predikat = 'الرديء'; // Default is Rodi'
 
@@ -491,11 +525,14 @@ export const getRekap = async (c: Context) => {
     const pengurangIzin = Math.floor(izinTotal / 15);
     const pengurangAlpa = Math.floor(tanpaIzinTotal / 5);
 
-    if (grandTotalMapel > 0) {
-      const rataRataRaw = grandTotal / grandTotalMapel;
-      rataRata = Math.round(rataRataRaw); // MPHM standard rounding (round to nearest)
+    const fullGrandTotal = fullTotalS1 + fullTotalS2;
+    const fullGrandMapel = fullTotalMapelS1 + fullTotalMapelS2;
+
+    if (fullGrandMapel > 0) {
+      const prestasiBase = fullGrandTotal / fullGrandMapel;
+      const roundedPrestasiBase = Math.round(prestasiBase); 
+      nilaiPrestasi = roundedPrestasiBase - pengurangIzin - pengurangAlpa;
       
-      nilaiPrestasi = rataRata - pengurangIzin - pengurangAlpa;
       if (nilaiPrestasi >= 9) predikat = 'الجيد الأول';
       else if (nilaiPrestasi === 8) predikat = 'الجيد الثاني';
       else if (nilaiPrestasi === 7) predikat = 'المتوسط الأول';

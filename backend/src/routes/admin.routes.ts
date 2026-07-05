@@ -2,7 +2,8 @@ import { Hono } from 'hono';
 import { 
   getAdminStats, 
   getSantriList, 
-  createSantri, 
+  createSantri,
+  importSantriBatch,
   updateSantri, 
   deleteSantri,
   getUsersList,
@@ -41,6 +42,7 @@ adminRoutes.get('/stats', getAdminStats);
 // CRUD Santri
 adminRoutes.get('/santri', getSantriList);
 adminRoutes.post('/santri', createSantri);
+adminRoutes.post('/santri/batch', importSantriBatch);
 adminRoutes.put('/santri/:id', updateSantri);
 adminRoutes.delete('/santri/:id', deleteSantri);
 

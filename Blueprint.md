@@ -70,35 +70,27 @@ Better Auth, JWT, HttpOnly Cookie, Refresh Token, Cloudflare Pages, Cloudflare W
 
 Menggunakan **Feature Based Architecture** untuk skalabilitas maksimal.
 
-## Frontend (`frontend/src/`)
+## Admin Frontend (`admin/src/`)
 ```text
-├── app/              # App setup, provider, router init
 ├── assets/           # Images, icons, fonts
 ├── components/       # Global UI components (Design System)
 ├── config/           # Environment, constants
 ├── hooks/            # Global reusable hooks
 ├── layouts/          # Global layouts (DashboardLayout dll)
-├── lib/              # 3rd party wrappers (axios, dexie)
+├── lib/              # 3rd party wrappers
+├── pages/            # Page components
 ├── routes/           # Routing configuration
-├── services/         # API layer terpisah (*.api.ts)
-├── stores/           # Global state (Zustand)
-├── styles/           # Global CSS, Tailwind entry
-├── theme/            # Theme Design System (colors, radius, dll)
-├── tokens/           # Design Tokens
-├── types/            # Global TypeScript types
-├── utils/            # Helper functions
-└── features/         # Feature Based Modules
-    ├── auth/
-    ├── dashboard/
-    ├── attendance/
-    ├── grades/
-    ├── memorization/
-    ├── report/
-    ├── profile/
-    ├── announcement/
-    ├── agenda/
-    ├── monitoring/
-    └── settings/
+└── styles/           # Global CSS, Tailwind entry
+```
+
+## Mobile Frontend (`mobile/`)
+Aplikasi PWA/Mobile menggunakan Expo React Native.
+```text
+├── app/              # Expo Router pages
+├── assets/           # Images, fonts
+├── components/       # UI Components
+├── hooks/            # Custom hooks
+└── lib/              # Utility functions
 ```
 
 ## Backend (`backend/src/`)

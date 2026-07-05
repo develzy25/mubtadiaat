@@ -20,12 +20,12 @@ app.use('*', cors({
     if (!origin) return 'https://mubtadiaat.pages.dev';
     if (
       origin === 'http://localhost:5173' ||
-      origin === 'https://mubtadiaat.pages.dev' ||
-      origin.endsWith('.mubtadiaat.pages.dev')
+      origin === 'http://localhost:5174' ||
+      origin === 'http://localhost:8081'
     ) {
       return origin;
     }
-    return 'https://mubtadiaat.pages.dev';
+    return 'http://localhost:5174';
   },
   allowHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
   allowMethods: ['POST', 'GET', 'OPTIONS', 'PUT', 'DELETE'],

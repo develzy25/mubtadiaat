@@ -1,13 +1,21 @@
 {
-  "name": "mubtadiat",
+  "name": "e-mubtadiaat",
   "version": "1.0.0",
   "private": true,
+  "workspaces": [
+    "backend",
+    "admin",
+    "mobile",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "npm run dev:all",
-    "dev:all": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
-    "dev:frontend": "cd frontend && npm run dev",
-    "dev:backend": "cd backend && npm run dev",
-    "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install"
+    "dev:all": "concurrently \"npm run dev:backend\" \"npm run dev:admin\" \"npm run dev:mobile\"",
+    "dev:backend": "npm run dev -w backend",
+    "dev:admin": "npm run dev -w admin",
+    "dev:mobile": "npm run start -w mobile",
+    "build:shared": "npm run build -w packages/shared",
+    "install:all": "npm install"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

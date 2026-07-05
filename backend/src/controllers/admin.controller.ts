@@ -242,6 +242,61 @@ export const createSantri = async (c: Context) => {
   }
 };
 
+export const importSantriBatch = async (c: Context) => {
+  try {
+    const db = drizzle(c.env.DB, { schema });
+    const body = await c.req.json();
+    const { data = [], recordedBy = 'admin-system' } = body;
+    
+    if (!Array.isArray(data) || data.length === 0) {
+      return c.json({ success: false, message: 'Data array is required and must not be empty' }, 400);
+    }
+    
+    const insertData = data.map((item: any) => {
+      const id = `str_${crypto.randomUUID()}`;
+      return {
+        id,
+        nis: item.noStambuk || `nis_${Date.now()}_${Math.random()}`,
+        noStambuk: item.noStambuk,
+        nik: item.nik,
+        name: item.name,
+        tempatLahir: item.tempatLahir,
+        tanggalLahir: item.tanggalLahir,
+        classId: item.classId || 'kelas-001',
+        bagian: item.bagian,
+        alamatLengkap: item.alamatLengkap,
+        provinsi: item.provinsi,
+        kabupaten: item.kabupaten,
+        kecamatan: item.kecamatan,
+        kelurahan: item.kelurahan,
+        kodePos: item.kodePos,
+        noKk: item.noKk,
+        namaAyah: item.namaAyah,
+        namaIbu: item.namaIbu,
+        tahunMasuk: item.tahunMasuk || new Date().getFullYear().toString(),
+        tahunKeluar: item.tahunKeluar || null,
+        kamar: item.kamar,
+        customFields: item.customFields ? JSON.stringify(item.customFields) : null,
+        status: item.status || 'ACTIVE',
+      };
+    });
+    
+    // Insert all in a single batch query
+    await db.insert(schema.santriRefs).values(insertData);
+    
+    await logAudit(db, recordedBy, 'IMPORT_SANTRI_BATCH', 'santri_refs', 'batch', null, { count: insertData.length });
+    
+    return c.json({
+      success: true,
+      message: `${insertData.length} santri imported successfully`,
+      data: insertData.length
+    });
+  } catch (error) {
+    console.error('Error importing santri batch:', error);
+    return c.json({ success: false, message: 'Internal server error' }, 500);
+  }
+};
+
 export const updateSantri = async (c: Context) => {
   try {
     const db = drizzle(c.env.DB, { schema });

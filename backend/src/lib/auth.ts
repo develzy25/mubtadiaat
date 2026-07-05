@@ -21,14 +21,15 @@ export const getAuth = (
   
   const origins = [
     'http://localhost:5173',
-    'https://mubtadiaat.pages.dev'
+    'http://localhost:5174',
+    'http://localhost:8081'
   ];
 
   if (requestUrl) {
     try {
       const urlObj = new URL(requestUrl);
       const origin = urlObj.origin;
-      if (origin.endsWith('.pages.dev') && !origins.includes(origin)) {
+      if (!origins.includes(origin)) {
         origins.push(origin);
       }
     } catch (_) {}

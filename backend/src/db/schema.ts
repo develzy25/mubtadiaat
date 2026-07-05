@@ -145,7 +145,7 @@ export const kelasRefs = sqliteTable('kelas_refs', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   level: text('level').notNull(),
-  mustahiqId: text('mustahiq_id').notNull(), // references users.id
+  mustahiqId: text('mustahiq_id'), // references users.id
   jenjangName: text('jenjang_name'),
   tingkatName: text('tingkat_name'),
   bagian: text('bagian'),
