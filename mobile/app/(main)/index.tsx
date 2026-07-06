@@ -17,7 +17,7 @@ const cardWidth = isWeb ? 140 : width * 0.35;
 
 export default function UnifiedDashboard() {
   const { data: sessionData, isPending: sessionPending } = authClient.useSession();
-  const roleId = sessionData?.user?.role || 4; // default to 4 (Mustahiq)
+  const roleId = (sessionData?.user as any)?.role || 4; // default to 4 (Mustahiq)
   const isMonitoring = roleId === 2 || roleId === 3;
 
   const { data, isLoading } = useQuery({

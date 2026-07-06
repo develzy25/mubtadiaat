@@ -14,7 +14,7 @@ export default function UnifiedLayout() {
     );
   }
 
-  const roleId = sessionData?.user?.role || 4;
+  const roleId = (sessionData?.user as any)?.role || 4;
   const isMonitoring = roleId === 2 || roleId === 3;
 
   return (
