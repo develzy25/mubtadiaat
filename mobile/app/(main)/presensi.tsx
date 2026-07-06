@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, SafeAreaView } from 'react-native';
-import { api } from '../../../src/services/api';
+import { api } from '../../src/services/api';
 import { Check, X, AlertCircle, Clock } from 'lucide-react-native';
 
 export default function PresensiPage() {

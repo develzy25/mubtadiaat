@@ -20,7 +20,7 @@ app.use('*', prettyJSON());
 app.use('/api/*', cors({
   origin: (origin) => origin || '*',
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization'],
+  allowHeaders: ['Content-Type', 'Authorization', 'x-role'],
   exposeHeaders: ['Content-Length'],
   maxAge: 600,
   credentials: true,

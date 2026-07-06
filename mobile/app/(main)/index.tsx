@@ -6,9 +6,9 @@ import {
   Users, BookOpen, ClipboardList, Star,
   Book, Calendar, ArrowRight, User, Activity, AlertTriangle
 } from 'lucide-react-native';
-import { BouncingCard } from '../../../src/components/ui/BouncingCard';
-import { getMobileDashboard } from '../../../src/services/api';
-import { authClient } from '../../../src/lib/auth.client';
+import { BouncingCard } from '../../src/components/ui/BouncingCard';
+import { getMobileDashboard } from '../../src/services/api';
+import { authClient } from '../../src/lib/auth.client';
 
 const { width } = Dimensions.get('window');
 const isWeb = Platform.OS === 'web';
