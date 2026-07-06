@@ -137,3 +137,102 @@ export const getDashboard = async (c: Context) => {
     return c.json({ success: false, message: 'Failed to fetch dashboard' }, 500);
   }
 };
+
+export const getTugasList = async (c: Context) => {
+  // Mock endpoint for Tugas - currently using dummy as table is not defined yet
+  return c.json({ success: true, data: [] });
+};
+
+export const saveTugas = async (c: Context) => {
+  return c.json({ success: true, message: 'Tugas berhasil disimpan' });
+};
+
+export const getRekapPresensi = async (c: Context) => {
+  // Mock endpoint for Rekap
+  return c.json({ success: true, data: { 
+    totalHadir: 0, totalIzin: 0, totalSakit: 0, totalAlpha: 0 
+  } });
+};
+
+// ==========================================
+// MODUL PENILAIAN & FINALISASI (BLUEPRINT)
+// ==========================================
+
+export const getPenilaianKelas = async (c: Context) => {
+  const classId = c.req.query('classId');
+  const mapel = c.req.query('mapel');
+  const kuartal = c.req.query('kuartal');
+
+  if (!classId) return c.json({ success: false, message: 'Class ID required' }, 400);
+
+  try {
+    const santriList = await db.select().from(schema.santri).where(eq(schema.santri.kelasId, classId));
+    
+    // In a real database, we would join with the Nilai table to fetch existing scores for this mapel & kuartal.
+    // For now, we return empty scores.
+    const data = santriList.map(s => ({
+      id: s.id,
+      name: s.name,
+      noStambuk: s.noStambuk,
+      nilai: null
+    }));
+
+    return c.json({ success: true, data });
+  } catch (error) {
+    console.error("Error getPenilaianKelas:", error);
+    return c.json({ success: false, message: 'Failed to fetch santri list' }, 500);
+  }
+};
+
+export const savePenilaianKuartal = async (c: Context) => {
+  try {
+    const body = await c.req.json();
+    // body: { classId, mapelId, kuartal, scores: [{santri_id, nilai}] }
+    
+    // In a real implementation, we would upsert these scores to a NilaiKuartal table
+    // For now, return success
+    return c.json({ success: true, message: 'Nilai berhasil disimpan' });
+  } catch (error) {
+    console.error("Error savePenilaianKuartal:", error);
+    return c.json({ success: false, message: 'Failed to save nilai' }, 500);
+  }
+};
+
+export const getStatusKelas = async (c: Context) => {
+  // Mock endpoint: returns list of classes and their finalization status
+  try {
+    const classList = await db.select().from(schema.kelas).limit(5);
+    
+    const data = classList.map(k => ({
+      id: k.id,
+      name: `Kelas ${k.bagian}`,
+      wali: 'Ust. Fulan', // Mock
+      totalSantri: 30, // Mock
+      progress: Math.floor(Math.random() * 100), // Mock progress
+      status: Math.random() > 0.5 ? 'Draft' : 'Siap Finalisasi' // Mock
+    }));
+
+    return c.json({ success: true, data });
+  } catch (error) {
+    console.error("Error getStatusKelas:", error);
+    return c.json({ success: false, message: 'Failed to fetch status kelas' }, 500);
+  }
+};
+
+export const finalisasiKelas = async (c: Context) => {
+  const classId = c.req.param('classId');
+  
+  if (!classId) return c.json({ success: false, message: 'Class ID required' }, 400);
+
+  try {
+    // In a real implementation:
+    // 1. Check if all Mustahiq have inputted their grades.
+    // 2. Calculate Nilai Khos & Nilai 'Am based on Blueprint formulas.
+    // 3. Mark the class status as 'Final' to lock it.
+    
+    return c.json({ success: true, message: 'Kelas berhasil difinalisasi' });
+  } catch (error) {
+    console.error("Error finalisasiKelas:", error);
+    return c.json({ success: false, message: 'Failed to finalize class' }, 500);
+  }
+};

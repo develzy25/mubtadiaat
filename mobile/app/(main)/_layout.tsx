@@ -59,21 +59,35 @@ export default function UnifiedLayout() {
           ),
         }}
       />
+      
+      {/* KHUSUS MUSTAHIQ */}
       <Tabs.Screen
         name="presensi"
         options={{
-          title: 'Kelas Saya',
-          href: isMonitoring ? null : '/(main)/presensi', // Hide for monitoring
+          title: 'Absensi',
+          href: isMonitoring ? null : '/(main)/presensi',
           tabBarIcon: ({ color }) => (
             <CalendarCheck color={color} size={24} />
           ),
         }}
       />
       <Tabs.Screen
-        name="nilai"
+        name="penilaian"
         options={{
-          title: 'Tugas',
-          href: isMonitoring ? null : '/(main)/nilai', // Hide for monitoring
+          title: 'Input Nilai',
+          href: isMonitoring ? null : '/(main)/penilaian',
+          tabBarIcon: ({ color }) => (
+            <FileSpreadsheet color={color} size={24} />
+          ),
+        }}
+      />
+
+      {/* KHUSUS MONITORING (MUFATISH / MUNDZIR) */}
+      <Tabs.Screen
+        name="finalisasi"
+        options={{
+          title: 'Finalisasi',
+          href: !isMonitoring ? null : '/(main)/finalisasi',
           tabBarIcon: ({ color }) => (
             <FileSpreadsheet color={color} size={24} />
           ),
@@ -82,11 +96,19 @@ export default function UnifiedLayout() {
       <Tabs.Screen
         name="rekap"
         options={{
-          title: 'Rekap Presensi',
-          href: !isMonitoring ? null : '/(main)/rekap', // Hide for mustahiq
+          title: 'Laporan',
+          href: !isMonitoring ? null : '/(main)/rekap',
           tabBarIcon: ({ color }) => (
             <Activity color={color} size={24} />
           ),
+        }}
+      />
+      
+      {/* Hide existing `nilai.tsx` if we replace it with `penilaian.tsx` */}
+      <Tabs.Screen
+        name="nilai"
+        options={{
+          href: null,
         }}
       />
     </Tabs>

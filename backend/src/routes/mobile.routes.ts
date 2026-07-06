@@ -16,4 +16,17 @@ mobile.get('/jadwal', mobileController.getJadwalMengajar);
 // Dashboard Mobile
 mobile.get('/dashboard', mobileController.getDashboard);
 
+// Tugas / Penilaian Lama (To be removed/replaced)
+mobile.get('/tugas', mobileController.getTugasList);
+mobile.post('/tugas', mobileController.saveTugas);
+
+// NEW: Penilaian Kuartal & Finalisasi (Blueprint)
+mobile.get('/penilaian/kelas', mobileController.getPenilaianKelas);
+mobile.post('/penilaian/input', mobileController.savePenilaianKuartal);
+mobile.get('/penilaian/status-kelas', mobileController.getStatusKelas);
+mobile.post('/penilaian/finalisasi/:classId', mobileController.finalisasiKelas);
+
+// Rekap Presensi
+mobile.get('/rekap/presensi', mobileController.getRekapPresensi);
+
 export default mobile;
