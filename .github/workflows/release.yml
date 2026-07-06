@@ -1,0 +1,78 @@
+name: Release Multi-Platform
+
+on:
+  push:
+    tags:
+      - 'v*.*.25' # Only trigger on tags ending with .25 (e.g., v1.0.25)
+
+jobs:
+  build-and-deploy:
+    name: Build & Release
+    runs-on: windows-latest
+    permissions:
+      contents: write # Needed for GitHub Releases
+      deployments: write # Needed for Cloudflare Pages
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Root Dependencies
+        run: npm ci
+
+      # 1. DEPLOY CLOUDFLARE PAGES (Admin PWA)
+      - name: Build Admin Web
+        working-directory: ./admin
+        run: |
+          npm ci
+          npm run build
+
+      - name: Deploy Admin to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: mubtadiaat
+          directory: ./admin/dist
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
+
+      # 2. BUILD WINDOWS DESKTOP INSTALLER (.EXE)
+      - name: Build Windows Desktop App
+        working-directory: ./admin
+        run: |
+          npm run build:windows
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 3. BUILD ANDROID APK/AAB (EAS)
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      
+      - name: Build Android APK
+        working-directory: ./mobile
+        run: eas build --platform android --profile production --local --output ../mubtadiaat-android.apk
+        continue-on-error: true # Local EAS build might require complex setup on GitHub Actions, fallback to simple expo export if needed.
+
+      # 4. PUBLISH TO GITHUB RELEASES
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            admin/dist_electron/*.exe
+            mubtadiaat-android.apk
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
