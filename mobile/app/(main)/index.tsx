@@ -1,24 +1,20 @@
 import React from 'react';
-import { View, Text, ScrollView, SafeAreaView, Platform, Dimensions, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, SafeAreaView, Platform, Dimensions, ActivityIndicator, Image } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'expo-router';
 import { 
   Users, BookOpen, ClipboardList, Star,
-  Book, Calendar, ArrowRight, User, Activity, AlertTriangle
+  Book, Calendar, ArrowRight, CheckSquare, Clock
 } from 'lucide-react-native';
-import { BouncingCard } from '../../src/components/ui/BouncingCard';
-import { getMobileDashboard } from '../../src/services/api';
 import { authClient } from '../../src/lib/auth.client';
-
-const { width } = Dimensions.get('window');
-const isWeb = Platform.OS === 'web';
-// Calculate a responsive card width for the horizontal scroll
-const cardWidth = isWeb ? 140 : width * 0.35;
+import { getMobileDashboard } from '../../src/services/api';
+import { ThreeDCalendarIcon } from '../../src/components/ui/ThreeDCalendarIcon';
 
 export default function UnifiedDashboard() {
   const { data: sessionData, isPending: sessionPending } = authClient.useSession();
   const roleId = (sessionData?.user as any)?.role || 4; // default to 4 (Mustahiq)
   const isMonitoring = roleId === 2 || roleId === 3;
+  const userName = sessionData?.user?.name || "Ustadz/Ustadzah";
 
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard', isMonitoring ? 'monitoring' : 'mustahiq'],
@@ -28,167 +24,207 @@ export default function UnifiedDashboard() {
 
   if (sessionPending || isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-slate-50">
-        <ActivityIndicator size="large" color="#1E40AF" />
+      <View className="flex-1 items-center justify-center bg-[#F4F7FC]">
+        <ActivityIndicator size="large" color="#2563EB" />
       </View>
     );
   }
 
-  const summary = data?.data?.summary || { kelas: 0, jadwal: 0, tugas: 0, penilaian: 0 };
-  const schedule = data?.data?.schedule || [];
+  // Neumorphic shadow style
+  const neumorphicShadow = {
+    elevation: 8,
+    shadowColor: '#94A3B8',
+    shadowOffset: { width: 4, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    backgroundColor: '#FFFFFF'
+  };
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50">
-      <ScrollView 
-        showsVerticalScrollIndicator={false} 
-        className="flex-1"
-        contentContainerStyle={{ paddingBottom: 120 }}
-      >
+    <SafeAreaView className="flex-1 bg-[#F4F7FC]">
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
         
-        {/* HEADER SECTION (PREMIUM 3D STYLE) */}
-        <View className="pt-12 pb-6 px-6 bg-white rounded-b-[40px] shadow-sm mb-6" style={{ elevation: 10, shadowColor: '#94A3B8', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20 }}>
-          <View className="mb-6">
-            <Text className="text-blue-600 font-bold text-xs uppercase tracking-widest mb-1">
-              Portal Pengajar
-            </Text>
-            <Text className="text-3xl font-extrabold text-slate-800 tracking-tight leading-tight">
-              Hidayatul Mubtadi'at
-            </Text>
-          </View>
+        {/* HEADER SECTION */}
+        <View className="px-6 pt-8 pb-6">
+          <Text className="text-slate-800 text-base font-semibold tracking-wide">Pondok Pesantren</Text>
+          <Text className="text-slate-900 text-3xl font-extrabold tracking-tight mt-1 leading-tight">Hidayatul Mubtadi'at</Text>
+          <Text className="text-slate-900 text-3xl font-extrabold tracking-tight leading-tight">Lirboyo</Text>
+          <Text className="text-slate-500 text-sm font-medium mt-2">Aplikasi Pengajar</Text>
+        </View>
 
-          {/* User Profile Card (3D Glassy look) */}
-          <View className="bg-gradient-to-br from-blue-600 to-indigo-800 rounded-3xl p-5 shadow-2xl flex-row items-center justify-between overflow-hidden" style={{ elevation: 15, shadowColor: '#1E40AF' }}>
-            {/* Decorative background shapes */}
-            <View className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
-            <View className="absolute -bottom-10 -left-10 w-24 h-24 bg-blue-400/20 rounded-full blur-xl" />
+        {/* PROFILE CARD (3D NEUMORPHISM) */}
+        <View className="px-6 mb-8">
+          <View style={[neumorphicShadow, { borderRadius: 32 }]} className="p-6 flex-row items-center justify-between border border-white">
             
-            <View className="flex-row items-center flex-1 z-10">
-              <View className="w-14 h-14 bg-white/20 rounded-full items-center justify-center mr-4 border border-white/30 backdrop-blur-md">
-                <User color="#FFFFFF" size={28} />
+            <View className="flex-row items-center flex-1 pr-2">
+              {/* Avatar (Placeholder since no real image is available) */}
+              <View className="w-16 h-16 rounded-full bg-blue-100 items-center justify-center border-4 border-white shadow-sm overflow-hidden mr-4">
+                <Image source={{ uri: 'https://i.pravatar.cc/150?u=a042581f4e29026704d' }} className="w-full h-full" resizeMode="cover" />
               </View>
-              <View>
-                <Text className="text-blue-100 text-xs font-medium mb-1">Selamat Datang,</Text>
-                <Text className="text-white font-bold text-lg" numberOfLines={1}>Ustadz / Ustadzah</Text>
+              
+              <View className="flex-1">
+                <Text className="text-slate-500 text-xs font-medium mb-0.5">Assalamu'alaikum,</Text>
+                <Text className="text-slate-800 text-lg font-extrabold">{userName}</Text>
+                <Text className="text-slate-400 text-[10px] leading-tight mt-1 font-medium pr-4">Semoga hari ini penuh keberkahan dalam mengajar dan membimbing.</Text>
               </View>
             </View>
 
-            <View className="bg-white/20 rounded-2xl w-14 h-14 items-center justify-center border border-white/30 backdrop-blur-md z-10">
-              <Text className="text-white text-[10px] font-bold uppercase mb-1">Hari Ini</Text>
-              <Text className="text-white font-extrabold text-xl">{new Date().getDate()}</Text>
+            {/* 3D Calendar Widget Placeholder */}
+            <View className="items-center bg-slate-50 rounded-[20px] p-2 border border-slate-100 shadow-sm" style={{ elevation: 2 }}>
+              <ThreeDCalendarIcon />
             </View>
           </View>
         </View>
 
-        {/* SUMMARY SECTION */}
-        <View className="mb-8">
-          <View className="px-6 mb-4 flex-row items-center justify-between">
-            <Text className="text-slate-800 font-bold text-xl tracking-tight">Ringkasan Info</Text>
+        {/* RINGKASAN HARI INI */}
+        <View className="px-6 mb-8">
+          <Text className="text-slate-800 font-bold text-lg mb-4">Ringkasan Hari Ini</Text>
+          <View className="flex-row justify-between">
+            {/* Card 1 */}
+            <View style={[neumorphicShadow, { borderRadius: 24, width: '23%', padding: 12, alignItems: 'center' }]}>
+              <View className="w-10 h-10 rounded-2xl bg-blue-50 items-center justify-center mb-2">
+                <Users color="#3B82F6" size={20} />
+              </View>
+              <Text className="text-slate-500 text-[10px] font-medium text-center leading-tight h-6">Kelas Saya</Text>
+              <Text className="text-slate-800 text-xl font-black mt-1">4</Text>
+            </View>
+            {/* Card 2 */}
+            <View style={[neumorphicShadow, { borderRadius: 24, width: '23%', padding: 12, alignItems: 'center' }]}>
+              <View className="w-10 h-10 rounded-2xl bg-emerald-50 items-center justify-center mb-2">
+                <BookOpen color="#10B981" size={20} />
+              </View>
+              <Text className="text-slate-500 text-[10px] font-medium text-center leading-tight h-6">Jadwal Hari Ini</Text>
+              <Text className="text-slate-800 text-xl font-black mt-1">3</Text>
+            </View>
+            {/* Card 3 */}
+            <View style={[neumorphicShadow, { borderRadius: 24, width: '23%', padding: 12, alignItems: 'center' }]}>
+              <View className="w-10 h-10 rounded-2xl bg-amber-50 items-center justify-center mb-2">
+                <CheckSquare color="#F59E0B" size={20} />
+              </View>
+              <Text className="text-slate-500 text-[10px] font-medium text-center leading-tight h-6">Tugas Dibuat</Text>
+              <Text className="text-slate-800 text-xl font-black mt-1">2</Text>
+            </View>
+            {/* Card 4 */}
+            <View style={[neumorphicShadow, { borderRadius: 24, width: '23%', padding: 12, alignItems: 'center' }]}>
+              <View className="w-10 h-10 rounded-2xl bg-purple-50 items-center justify-center mb-2">
+                <Star color="#8B5CF6" size={20} />
+              </View>
+              <Text className="text-slate-500 text-[10px] font-medium text-center leading-tight h-6">Penilaian</Text>
+              <Text className="text-slate-800 text-xl font-black mt-1">12</Text>
+            </View>
           </View>
-          
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 10, gap: 16 }}
-            style={{ flexGrow: 0 }}
-          >
-            {[
-              { title: 'Kelas', value: summary.kelas, icon: Users, color: '#3B82F6', bg: 'bg-blue-50' },
-              { title: 'Jadwal', value: summary.jadwal, icon: BookOpen, color: '#10B981', bg: 'bg-emerald-50' },
-              { title: 'Tugas', value: summary.tugas, icon: ClipboardList, color: '#F59E0B', bg: 'bg-amber-50' },
-              { title: 'Penilaian', value: summary.penilaian, icon: Star, color: '#8B5CF6', bg: 'bg-purple-50' }
-            ].map((item, index) => (
-              <BouncingCard key={index} className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 items-center justify-center" style={{ width: cardWidth, elevation: 5, shadowColor: '#64748B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10 }}>
-                <View className={`w-14 h-14 rounded-2xl ${item.bg} items-center justify-center mb-4`}>
-                  <item.icon color={item.color} size={28} />
-                </View>
-                <Text className="text-slate-500 text-sm font-medium mb-1 text-center">{item.title}</Text>
-                <Text className="text-slate-800 font-extrabold text-3xl">{item.value}</Text>
-              </BouncingCard>
-            ))}
-          </ScrollView>
         </View>
 
-        {/* SCHEDULE SECTION (ONLY FOR MUSTAHIQ) */}
-        {!isMonitoring && (
-          <View className="px-6 mb-8">
-            <View className="flex-row justify-between items-end mb-4">
-              <Text className="text-slate-800 font-bold text-xl tracking-tight">Jadwal Hari Ini</Text>
-              <Text className="text-blue-600 text-sm font-bold">Lihat Semua</Text>
-            </View>
-
-            <View className="bg-white rounded-[32px] p-6 shadow-sm border border-slate-100" style={{ elevation: 8, shadowColor: '#64748B', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.05, shadowRadius: 15 }}>
-              {schedule.length > 0 ? (
-                schedule.map((item: any, index: number) => (
-                  <View key={item.id} className="flex-row mb-6 last:mb-0 items-center">
-                    <View className="w-16 items-center mr-3">
-                      <Text className="text-slate-800 font-extrabold text-lg">{item.sesi}</Text>
-                      <Text className="text-slate-400 text-xs font-medium uppercase tracking-wider mt-1">{item.hari}</Text>
-                    </View>
-                    
-                    <View className="w-1.5 h-12 bg-blue-100 rounded-full mx-2 relative overflow-hidden">
-                      <View className="w-full h-1/2 bg-blue-600 rounded-full absolute top-0" />
-                    </View>
-
-                    <View className="flex-1 ml-4 bg-slate-50 border border-slate-100 rounded-2xl p-4 flex-row items-center justify-between">
-                      <View>
-                        <Text className="text-slate-800 font-bold text-base mb-1">Kelas {item.kelasId}</Text>
-                        <Text className="text-slate-500 text-xs font-medium">Kitab: {item.kitabId}</Text>
-                      </View>
-                      <View className="w-8 h-8 bg-white rounded-full items-center justify-center shadow-sm">
-                        <ArrowRight color="#3B82F6" size={16} />
-                      </View>
-                    </View>
-                  </View>
-                ))
-              ) : (
-                <View className="items-center py-10">
-                  <View className="w-20 h-20 bg-slate-50 rounded-full items-center justify-center mb-4">
-                    <Calendar color="#94A3B8" size={32} />
-                  </View>
-                  <Text className="text-slate-800 font-bold text-lg">Waktu Luang!</Text>
-                  <Text className="text-slate-400 font-medium mt-1 text-center">Tidak ada jadwal mengajar untuk hari ini.</Text>
-                </View>
-              )}
-            </View>
+        {/* JADWAL MENGAJAR */}
+        <View className="px-6 mb-8">
+          <View className="flex-row justify-between items-center mb-4">
+            <Text className="text-slate-800 font-bold text-lg">Jadwal Mengajar Hari Ini</Text>
+            <Text className="text-blue-500 text-xs font-semibold">Lihat Semua {'>'}</Text>
           </View>
-        )}
 
-        {/* QUICK ACCESS */}
+          <View style={[neumorphicShadow, { borderRadius: 28 }]} className="p-5">
+            
+            {/* Item 1 */}
+            <View className="flex-row mb-6 relative">
+              <View className="w-14 items-center mr-2">
+                <Text className="text-slate-800 font-bold text-sm">07:30</Text>
+                <Text className="text-slate-400 text-xs font-medium">08:30</Text>
+              </View>
+              {/* Timeline Line */}
+              <View className="w-px h-full bg-slate-200 absolute left-[64px] top-4 -z-10" />
+              <View className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 ml-2 mr-4" />
+              
+              <View className="flex-1 flex-row">
+                <View className="w-12 h-12 bg-blue-500 rounded-2xl items-center justify-center shadow-sm shadow-blue-500/30 mr-3">
+                  <BookOpen color="white" size={20} />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-slate-800 font-extrabold text-sm mb-0.5">Kelas Tahsin</Text>
+                  <Text className="text-blue-600 text-xs font-bold mb-1">Kelas A</Text>
+                  <Text className="text-slate-400 text-[10px] font-medium">Materi: Makharijul Huruf</Text>
+                </View>
+                <View className="bg-emerald-50 px-2 py-1 h-6 rounded-lg self-start">
+                  <Text className="text-emerald-600 text-[9px] font-bold">Sedang Berlangsung</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Item 2 */}
+            <View className="flex-row mb-6 relative">
+              <View className="w-14 items-center mr-2">
+                <Text className="text-slate-800 font-bold text-sm">09:00</Text>
+                <Text className="text-slate-400 text-xs font-medium">10:00</Text>
+              </View>
+              {/* Timeline Line */}
+              <View className="w-px h-full bg-slate-200 absolute left-[64px] top-4 -z-10" />
+              <View className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 ml-2 mr-4" />
+              
+              <View className="flex-1 flex-row">
+                <View className="w-12 h-12 bg-blue-500 rounded-2xl items-center justify-center shadow-sm shadow-blue-500/30 mr-3">
+                  <ClipboardList color="white" size={20} />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-slate-800 font-extrabold text-sm mb-0.5">Fiqih Dasar</Text>
+                  <Text className="text-blue-600 text-xs font-bold mb-1">Kelas B</Text>
+                  <Text className="text-slate-400 text-[10px] font-medium">Materi: Thaharah</Text>
+                </View>
+                <View className="px-2 py-1 h-6 self-start">
+                  <Text className="text-blue-500 text-[10px] font-bold">Akan Datang</Text>
+                </View>
+              </View>
+            </View>
+            
+          </View>
+        </View>
+
+        {/* TUGAS YANG PERLU DIPERIKSA */}
+        <View className="px-6 mb-8">
+          <View className="flex-row justify-between items-center mb-4">
+            <Text className="text-slate-800 font-bold text-lg">Tugas yang Perlu Diperiksa</Text>
+            <Text className="text-blue-500 text-xs font-semibold">Lihat Semua {'>'}</Text>
+          </View>
+          <View style={[neumorphicShadow, { borderRadius: 24 }]} className="p-4 flex-row items-center">
+            <View className="w-12 h-12 bg-amber-100 rounded-xl items-center justify-center mr-4">
+               <ClipboardList color="#F59E0B" size={24} />
+            </View>
+            <View className="flex-1">
+              <Text className="text-slate-800 font-bold text-sm">2 tugas menunggu pemeriksaan</Text>
+              <Text className="text-slate-400 text-[10px] font-medium mt-0.5">Terakhir diterima: 14 Mei 2025</Text>
+            </View>
+            <ArrowRight color="#94A3B8" size={16} />
+          </View>
+        </View>
+
+        {/* AKSES CEPAT */}
         <View className="px-6">
-          <Text className="text-slate-800 font-bold text-xl tracking-tight mb-4">Aksi Cepat</Text>
+          <Text className="text-slate-800 font-bold text-lg mb-4">Akses Cepat</Text>
           
-          <View className="flex-row flex-wrap justify-between" style={{ gap: 12 }}>
-            {(!isMonitoring ? [
-              { title: 'Presensi', icon: BookOpen, color: '#1E40AF', bg: 'bg-blue-50', link: '/(main)/presensi' },
-              { title: 'Penilaian', icon: Star, color: '#8B5CF6', bg: 'bg-purple-50', link: '/(main)/nilai' },
-              { title: 'Tugas', icon: ClipboardList, color: '#10B981', bg: 'bg-emerald-50', link: null },
-              { title: 'Agenda', icon: Calendar, color: '#F59E0B', bg: 'bg-amber-50', link: null }
-            ] : [
-              { title: 'Rekap Presensi', icon: Activity, color: '#1E40AF', bg: 'bg-blue-50', link: '/(main)/rekap' },
-              { title: 'Laporan Pelanggaran', icon: AlertTriangle, color: '#F43F5E', bg: 'bg-rose-50', link: null },
-              { title: 'Jadwal Kelas', icon: Calendar, color: '#10B981', bg: 'bg-emerald-50', link: null },
-              { title: 'Data Santri', icon: Users, color: '#8B5CF6', bg: 'bg-purple-50', link: null }
-            ]).map((item, index) => {
-              const CardContent = (
-                <BouncingCard key={index} className="bg-white rounded-3xl p-4 shadow-sm border border-slate-100 items-center justify-center w-[47%]" style={{ elevation: 5, shadowColor: '#64748B', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, marginBottom: 12 }}>
-                  <View className={`w-14 h-14 rounded-2xl ${item.bg} items-center justify-center mb-3`}>
-                    <item.icon color={item.color} size={26} />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="-mx-2 px-2" contentContainerStyle={{ paddingRight: 20 }}>
+            {[
+              { title: 'Kelas Saya', icon: Users, color: '#3B82F6', bg: 'bg-blue-50', link: '/(main)/presensi' },
+              { title: 'Tugas', icon: ClipboardList, color: '#8B5CF6', bg: 'bg-purple-50', link: '/(main)/nilai' },
+              { title: 'Penilaian', icon: Star, color: '#10B981', bg: 'bg-emerald-50', link: null },
+              { title: 'Jadwal Saya', icon: Calendar, color: '#3B82F6', bg: 'bg-blue-50', link: null }
+            ].map((item, index) => {
+              const Card = (
+                <View key={index} style={[neumorphicShadow, { borderRadius: 24, width: 85, padding: 12, alignItems: 'center', marginHorizontal: 6, marginBottom: 10 }]}>
+                  <View className={`w-12 h-12 rounded-2xl ${item.bg} items-center justify-center mb-2 shadow-sm border border-white`}>
+                    <item.icon color={item.color} size={24} />
                   </View>
-                  <Text className="text-slate-700 text-sm font-bold text-center">{item.title}</Text>
-                </BouncingCard>
+                  <Text className="text-slate-600 text-[10px] font-bold text-center leading-tight">{item.title}</Text>
+                </View>
               );
 
               if (item.link) {
                 return (
                   <Link key={index} href={item.link as any} asChild>
-                    {CardContent}
+                    {Card}
                   </Link>
                 );
               }
-              
-              return CardContent;
+              return Card;
             })}
-          </View>
+          </ScrollView>
         </View>
 
       </ScrollView>

@@ -24,21 +24,30 @@ export default function UnifiedLayout() {
         tabBarActiveTintColor: '#2563EB', // Blue-600
         tabBarInactiveTintColor: '#94A3B8', // Slate-400
         tabBarStyle: {
+          position: 'absolute',
+          bottom: 20,
+          left: 20,
+          right: 20,
           backgroundColor: '#FFFFFF',
+          borderRadius: 30,
           borderTopWidth: 0,
           elevation: 10,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.05,
-          shadowRadius: 10,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
+          shadowColor: '#94A3B8',
+          shadowOffset: { width: 0, height: 10 },
+          shadowOpacity: 0.15,
+          shadowRadius: 20,
+          height: 70,
+          paddingBottom: 10,
+          paddingTop: 10,
         },
         tabBarLabelStyle: {
           fontSize: 10,
-          fontWeight: '600',
-          marginTop: 2,
+          fontWeight: '700',
+          marginTop: 4,
+        },
+        tabBarItemStyle: {
+          borderRadius: 20,
+          margin: 4,
         }
       }}>
       <Tabs.Screen
