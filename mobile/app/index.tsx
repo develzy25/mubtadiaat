@@ -53,7 +53,7 @@ export default function LoginScreen() {
       >
         <View className="items-center mb-10">
           <View className="w-28 h-28 rounded-3xl items-center justify-center shadow-2xl shadow-blue-900/20 mb-6 overflow-hidden bg-white border border-slate-100" style={{ elevation: 15 }}>
-            <Image source={require('../assets/logo.png')} className="w-full h-full" resizeMode="contain" />
+            <Image source={require('../assets/logo.png')} className="w-[75%] h-[75%]" resizeMode="contain" />
           </View>
           <Text className="text-3xl font-extrabold text-slate-800 tracking-tight">e-Mubtadiaat</Text>
           <Text className="text-slate-500 mt-2 font-medium">Portal Mustahiq & Asatidz</Text>
