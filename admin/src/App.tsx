@@ -4,6 +4,7 @@ import { queryClient } from './cache/queryClient';
 import { AdminLayout } from './layouts/AdminLayout';
 import { LoginPage } from './pages/auth/LoginPage';
 import { useSession } from './lib/auth.client';
+import { NotificationRenderer } from './components/ui';
 
 // Admin Pages
 import { AdminDashboard } from './pages/AdminDashboard';
@@ -37,6 +38,7 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode,
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
+      <NotificationRenderer />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
