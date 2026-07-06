@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { 
-  Calendar, 
+import { DataExportImport } from '../components/ui';  Calendar, 
   Save, 
   RefreshCw, 
   Plus, 
@@ -160,6 +159,18 @@ export const AdminJadwalPage = () => {
     showToast('Grid jadwal dikosongkan (belum disimpan)', 'info');
   };
 
+  const handleDownloadTemplate = () => {
+    showToast('Fitur Download Template sedang dalam pengembangan', 'info');
+  };
+
+  const handleExportData = () => {
+    showToast('Fitur Export Jadwal sedang dalam pengembangan', 'info');
+  };
+
+  const handleImportData = (file: File) => {
+    showToast('Fitur Import Jadwal sedang dalam pengembangan', 'info');
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* Top Header Card */}
@@ -180,46 +191,58 @@ export const AdminJadwalPage = () => {
 
       {/* Filters Card */}
       <GlassCard className="p-5">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-          <div>
-            <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Kelas / Rombel</label>
-            <PremiumSelect
-              value={selectedClassId}
-              onChange={(e) => setSelectedClassId(e.target.value)}
-              className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-white/70 backdrop-blur-xs text-sm font-bold text-slate-700 focus:outline-hidden focus:border-indigo-500 transition-colors"
-            >
-              {classList.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.tingkatName} {c.bagian} {c.lokal ? `- ${c.lokal}` : ''}
-                </option>
-              ))}
-            </PremiumSelect>
+        <div className="flex flex-col xl:flex-row gap-4 items-end justify-between">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1 w-full max-w-4xl">
+            <div>
+              <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Kelas / Rombel</label>
+              <PremiumSelect
+                value={selectedClassId}
+                onChange={(e) => setSelectedClassId(e.target.value)}
+                className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-white/70 backdrop-blur-xs text-sm font-bold text-slate-700 focus:outline-hidden focus:border-indigo-500 transition-colors"
+              >
+                {classList.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.jenjangName} {c.tingkatName} {c.bagian} {c.lokal ? `- ${c.lokal}` : ''}
+                  </option>
+                ))}
+              </PremiumSelect>
+            </div>
+            <div>
+              <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Kwartal</label>
+              <PremiumSelect
+                value={selectedKwartal}
+                onChange={(e) => setSelectedKwartal(Number(e.target.value))}
+                className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-white/70 backdrop-blur-xs text-sm font-bold text-slate-700 focus:outline-hidden focus:border-indigo-500 transition-colors"
+              >
+                <option value={1}>Kwartal I</option>
+                <option value={2}>Kwartal II</option>
+                <option value={3}>Kwartal III</option>
+                <option value={4}>Kwartal IV</option>
+              </PremiumSelect>
+            </div>
+            <div>
+              <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Tahun Ajaran</label>
+              <PremiumSelect
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+                className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-white/70 backdrop-blur-xs text-sm font-bold text-slate-700 focus:outline-hidden focus:border-indigo-500 transition-colors"
+              >
+                <option value="2025-2026">2025-2026</option>
+                <option value="2026-2027">2026-2027</option>
+              </PremiumSelect>
+            </div>
           </div>
-          <div>
-            <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Kwartal</label>
-            <PremiumSelect
-              value={selectedKwartal}
-              onChange={(e) => setSelectedKwartal(Number(e.target.value))}
-              className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-white/70 backdrop-blur-xs text-sm font-bold text-slate-700 focus:outline-hidden focus:border-indigo-500 transition-colors"
-            >
-              <option value={1}>Kwartal I</option>
-              <option value={2}>Kwartal II</option>
-              <option value={3}>Kwartal III</option>
-              <option value={4}>Kwartal IV</option>
-            </PremiumSelect>
-          </div>
-          <div>
-            <label className="block text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Tahun Ajaran</label>
-            <PremiumSelect
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
-              className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-white/70 backdrop-blur-xs text-sm font-bold text-slate-700 focus:outline-hidden focus:border-indigo-500 transition-colors"
-            >
-              <option value="2025-2026">2025-2026</option>
-              <option value="2026-2027">2026-2027</option>
-            </PremiumSelect>
-          </div>
-          <div className="flex gap-2 justify-end">
+          
+          <div className="flex flex-wrap gap-2 justify-end w-full xl:w-auto items-center mt-2 xl:mt-0">
+            <DataExportImport 
+              onDownloadTemplate={handleDownloadTemplate}
+              onExportData={handleExportData}
+              onImportData={handleImportData}
+              isLoading={loading || saving}
+            />
+            
+            <div className="h-8 w-px bg-slate-200 mx-1 hidden md:block"></div>
+            
             <PremiumButton
               variant="ghost"
               onClick={handleClearAll}
