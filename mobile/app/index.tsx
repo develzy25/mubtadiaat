@@ -30,14 +30,8 @@ export default function LoginScreen() {
       // Save real token
       await setAuthToken(session.token);
       
-      if (user.role === 4) {
-        router.replace('/(roles)/mustahiq');
-      } else if (user.role === 2 || user.role === 3) {
-        router.replace('/(roles)/monitoring');
-      } else {
-        // Admin
-        router.replace('/(dashboard)');
-      }
+      // All roles now go to the unified (main) dashboard
+      router.replace('/(main)');
     } catch (err) {
       alert('Login gagal, periksa kredensial Anda');
     } finally {
