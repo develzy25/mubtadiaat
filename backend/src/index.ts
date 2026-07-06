@@ -32,6 +32,38 @@ app.route('/api/admin', adminRoutes);
 app.route('/api/mobile', mobileRoutes);
 
 import { getAuth } from './lib/auth.js';
+import { eq } from 'drizzle-orm';
+import * as schema from './db/schema.js';
+import { drizzle } from 'drizzle-orm/d1';
+
+app.post('/api/auth/mobile-login', async (c) => {
+  console.log("MOBILE LOGIN REQUEST");
+  const auth = getAuth(c.env, c.req.url);
+  try {
+    const body = await c.req.json();
+    const db = drizzle(c.env.DB, { schema });
+    
+    // Find user's email based on the username
+    const user = await db.select().from(schema.users).where(eq(schema.users.username, body.username)).get();
+    if (!user) {
+      return c.json({ error: "Invalid credentials" }, 401);
+    }
+
+    const headers = new Headers(c.req.raw.headers);
+    // Use the native signInEmail with the mapped email
+    const res = await auth.api.signInEmail({
+      body: {
+        email: user.email,
+        password: body.password
+      },
+      headers: headers
+    });
+    return c.json({ user: res.user, session: { token: res.token } });
+  } catch (err: any) {
+    console.error("Login error:", err);
+    return c.json({ error: err.message || "Invalid credentials" }, 401);
+  }
+});
 
 app.on(['POST', 'GET'], '/api/auth/**', (c) => {
   console.log("AUTH REQUEST:", c.req.url, c.req.method);
