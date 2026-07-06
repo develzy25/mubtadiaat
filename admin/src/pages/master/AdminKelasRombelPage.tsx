@@ -129,10 +129,6 @@ export const AdminKelasRombelPage = () => {
     setModalOpen(true);
   };
 
-  const getAsatidzName = (id: string) => {
-    const asatidz = asatidzList.find(a => a.id === id);
-    return asatidz ? asatidz.name : '-';
-  };
 
   const handleMunawwibChange = (idx: number, val: string) => {
     const newArr = [...formMunawwibIds];
@@ -502,15 +498,15 @@ export const AdminKelasRombelPage = () => {
             <PremiumSelect
               value={formMustahiqId}
               onChange={(e: any) => setFormMustahiqId(e.target.value)}
-              disabled={asatidzList.filter(a => a.role === '4').length === 0}
+              disabled={asatidzList.filter(a => a.role === 'Mustahiq').length === 0}
               className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-bold text-slate-700 focus:outline-hidden focus:border-emerald-500 transition-colors"
             >
-              {asatidzList.filter(a => a.role === '4').length === 0 ? (
+              {asatidzList.filter(a => a.role === 'Mustahiq').length === 0 ? (
                 <option value="">Buat Master Mustahiq terlebih dahulu</option>
               ) : (
                 <option value="">-- Pilih Mustahiq --</option>
               )}
-              {asatidzList.filter(a => a.role === '4').map(a => (
+              {asatidzList.filter(a => a.role === 'Mustahiq').map(a => (
                 <option key={a.id} value={a.id}>{a.name}</option>
               ))}
             </PremiumSelect>
@@ -523,24 +519,24 @@ export const AdminKelasRombelPage = () => {
                 + Tambah Munawwib
               </button>
             </div>
-            {formMunawwibs.map((munawwib, idx) => (
+            {formMunawwibIds.map((munawwib, idx) => (
               <div key={idx} className="flex items-center gap-2">
                 <PremiumSelect
                   value={munawwib}
                   onChange={(e: any) => handleMunawwibChange(idx, e.target.value)}
-                  disabled={asatidzList.filter(a => a.role === '5').length === 0}
+                  disabled={asatidzList.filter(a => a.role === 'Munawwib').length === 0}
                   className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-bold text-slate-700 focus:outline-hidden focus:border-emerald-500 transition-colors"
                 >
-                  {asatidzList.filter(a => a.role === '5').length === 0 ? (
+                  {asatidzList.filter(a => a.role === 'Munawwib').length === 0 ? (
                     <option value="">Buat Master Munawwib terlebih dahulu</option>
                   ) : (
                     <option value="">-- Pilih Munawwib --</option>
                   )}
-                  {asatidzList.filter(a => a.role === '5').map(a => (
+                  {asatidzList.filter(a => a.role === 'Munawwib').map(a => (
                     <option key={a.id} value={a.id}>{a.name}</option>
                   ))}
                 </PremiumSelect>
-                {formMunawwibs.length > 1 && (
+                {formMunawwibIds.length > 1 && (
                   <button type="button" onClick={() => removeMunawwibField(idx)} className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-100 rounded-lg transition-colors">
                     <X className="w-5 h-5" />
                   </button>
