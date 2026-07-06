@@ -81,44 +81,48 @@ export const NotificationRenderer = () => {
       {/* Confirmation Dialogs Container */}
       <AnimatePresence>
         {confirmDialog && confirmDialog.isOpen && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-9998">
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-9998 perspective-1000">
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20, rotateX: 10 }}
+              initial={{ opacity: 0, scale: 0.85, y: 30, rotateX: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0, rotateX: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 15, transition: { duration: 0.15 } }}
-              transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+              exit={{ opacity: 0, scale: 0.9, y: -20, rotateX: -10, transition: { duration: 0.2 } }}
+              transition={{ type: 'spring', stiffness: 350, damping: 25 }}
               className="w-full max-w-sm"
+              style={{ transformStyle: "preserve-3d" }}
             >
               <GlassCard
                 variant="neumorph"
-                className="p-6 border border-white/60 shadow-[20px_20px_60px_rgba(0,0,0,0.1),-20px_-20px_60px_rgba(255,255,255,0.8)] relative bg-white/80 backdrop-blur-md rounded-3xl"
+                className="p-6 border border-white/80 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5),inset_0_2px_4px_rgba(255,255,255,0.9)] relative bg-linear-to-b from-white/95 to-slate-50/90 backdrop-blur-2xl rounded-3xl overflow-hidden"
               >
-                {/* 3D Depth Top glow */}
-                <div className="absolute top-0 inset-x-0 h-10 bg-linear-to-b from-white/40 to-transparent pointer-events-none rounded-t-3xl" />
+                {/* 3D Depth Top & Side glows */}
+                <div className="absolute top-0 inset-x-0 h-1/2 bg-linear-to-b from-white to-transparent opacity-80 pointer-events-none rounded-t-3xl" />
+                <div className="absolute top-0 left-0 w-2 h-full bg-linear-to-b from-blue-400 to-indigo-600 rounded-l-3xl shadow-[4px_0_15px_rgba(79,70,229,0.4)]" />
 
-                <h3 className="font-black text-slate-800 text-sm uppercase tracking-wide border-b border-slate-200/60 pb-3 mb-4">
-                  {confirmDialog.title}
-                </h3>
-                
-                <p className="text-xs text-slate-600 font-semibold leading-relaxed mb-6">
-                  {confirmDialog.message}
-                </p>
+                <div className="relative z-10 pl-3">
+                  <h3 className="font-black text-slate-800 text-sm uppercase tracking-wide border-b border-slate-200/80 pb-3 mb-4 drop-shadow-sm flex items-center gap-2">
+                    {confirmDialog.title}
+                  </h3>
+                  
+                  <p className="text-xs text-slate-600 font-semibold leading-relaxed mb-6">
+                    {confirmDialog.message}
+                  </p>
 
-                <div className="flex items-center justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={confirmDialog.onCancel}
-                    className="px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-500 font-bold text-xs select-none active:scale-95 transition-transform"
-                  >
-                    Batal
-                  </button>
-                  <button
-                    type="button"
-                    onClick={confirmDialog.onConfirm}
-                    className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 hover:shadow-blue-500/35 select-none active:scale-95 transition-transform"
-                  >
-                    Oke
-                  </button>
+                  <div className="flex items-center justify-end gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={confirmDialog.onCancel}
+                      className="px-5 py-2.5 rounded-xl border border-slate-200/80 bg-white/50 hover:bg-white text-slate-500 font-black text-[11px] uppercase tracking-wider shadow-[0_2px_5px_rgba(0,0,0,0.05)] select-none active:translate-y-0.5 transition-all"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="button"
+                      onClick={confirmDialog.onConfirm}
+                      className="px-5 py-2.5 rounded-xl bg-linear-to-b from-blue-500 to-blue-700 hover:from-blue-400 hover:to-blue-600 border border-blue-400/50 text-white font-black text-[11px] uppercase tracking-wider shadow-[0_8px_15px_-3px_rgba(59,130,246,0.5),inset_0_2px_2px_rgba(255,255,255,0.3)] select-none active:translate-y-0.5 transition-all"
+                    >
+                      Oke, Lanjutkan
+                    </button>
+                  </div>
                 </div>
               </GlassCard>
             </motion.div>

@@ -23,6 +23,7 @@ import { GlassCard,
   Modal, PremiumSelect } from '../components/ui';
 import { useNotificationStore } from '../stores/notificationStore';
 import * as masterService from '../services/master.service';
+import { generateExcelTemplate, exportToExcel, parseExcel } from '../utils/excelService';
 
 interface ScheduleItem {
   id?: string;
@@ -160,16 +161,61 @@ export const AdminJadwalPage = () => {
     showToast('Grid jadwal dikosongkan (belum disimpan)', 'info');
   };
 
-  const handleDownloadTemplate = () => {
-    showToast('Fitur Download Template sedang dalam pengembangan', 'info');
+  const JADWAL_COLUMNS = [
+    { key: 'hari', header: 'Hari', width: 20, type: 'text' as const, required: true, example: 'السبت, الأحد', note: 'Isi dengan tulisan arab hari' },
+    { key: 'sesi', header: 'Sesi / Jam', width: 25, type: 'text' as const, required: true, example: 'الحصة الأولى, الحصة الثانية', note: 'Isi dengan sesi arab' },
+    { key: 'kitabName', header: 'Nama Kitab', width: 30, type: 'text' as const, required: true },
+    { key: 'pengajar', header: 'Nama Pengajar', width: 30, type: 'text' as const, required: false }
+  ];
+
+  const handleDownloadTemplate = async () => {
+    try {
+      await generateExcelTemplate(JADWAL_COLUMNS, 'Template_Jadwal_Pelajaran.xlsx', 'Jadwal');
+      showToast('Template berhasil didownload', 'success');
+    } catch (err) {
+      showToast('Gagal mendownload template', 'error');
+    }
   };
 
-  const handleExportData = () => {
-    showToast('Fitur Export Jadwal sedang dalam pengembangan', 'info');
+  const handleExportData = async () => {
+    if (!scheduleItems.length) {
+      showToast('Tidak ada data jadwal untuk di-export', 'warning');
+      return;
+    }
+    try {
+      await exportToExcel(scheduleItems, JADWAL_COLUMNS, 'Data_Jadwal_Pelajaran.xlsx', 'Jadwal');
+      showToast('Data jadwal berhasil diexport', 'success');
+    } catch (err) {
+      showToast('Gagal mengexport data', 'error');
+    }
   };
 
-  const handleImportData = (file: File) => {
-    showToast('Fitur Import Jadwal sedang dalam pengembangan', 'info');
+  const handleImportData = async (file: File) => {
+    try {
+      setLoading(true);
+      const data = await parseExcel(file);
+      
+      if (!data || data.length === 0) {
+        showToast('File excel kosong atau format tidak sesuai', 'error');
+        return;
+      }
+
+      const parsedItems: ScheduleItem[] = data.map((row: any) => ({
+        hari: row['Hari'] || row['hari'] || '',
+        sesi: row['Sesi / Jam'] || row['sesi'] || '',
+        kitabName: row['Nama Kitab'] || row['kitabName'] || '',
+        pengajar: row['Nama Pengajar'] || row['pengajar'] || ''
+      })).filter((item: ScheduleItem) => item.hari && item.sesi && item.kitabName); // Ensure required fields exist
+
+      // Merge with existing items or replace? Let's replace for simplicity
+
+      setScheduleItems(parsedItems);
+      showToast(`Berhasil memuat ${parsedItems.length} jadwal dari Excel. Silakan klik Simpan Jadwal.`, 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Gagal mengimport data', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
