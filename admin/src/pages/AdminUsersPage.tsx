@@ -3,13 +3,9 @@ import {
   Shield, 
   Edit3, 
   Save, 
-  BookOpen, 
-  AlertCircle,
   Trash2,
   Plus,
-  Key,
-  MessageSquare,
-  Phone
+  Key
 } from 'lucide-react';
 import { 
   fetchUsers, 
@@ -29,13 +25,19 @@ import { GlassCard,
   Tr,
   Th,
   Td,
-  Modal, PremiumSelect } from '../components/ui';
+  Modal, PremiumSelect, DataExportImport } from '../components/ui';
 import { useNotificationStore } from '../stores/notificationStore';
+import { generateExcelTemplate, exportToExcel, parseExcel, type ExcelColumnConfig } from '../utils/excelService';
+
+const USER_COLUMNS: ExcelColumnConfig[] = [
+  { key: 'name', header: 'Nama Lengkap', width: 30, type: 'text', required: true, example: 'Ahmad Muzakki' },
+  { key: 'email', header: 'Username / Email', width: 25, type: 'text', required: true, example: 'ahmad@mubtadiaat.id' },
+  { key: 'role', header: 'ID Role', width: 15, type: 'number', required: true, example: '1=Admin, 2=Mundzir, 3=Mufatish, 4=Mustahiq', note: 'Isi dengan angka 1 sampai 4' },
+];
 
 export const AdminUsersPage = () => {
   const { showToast, showConfirm } = useNotificationStore();
   const [users, setUsers] = useState<UserAdmin[]>([]);
-  const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
   const [alumniList, setAlumniList] = useState<SantriAdmin[]>([]);
   
   const [loading, setLoading] = useState(true);
@@ -48,17 +50,8 @@ export const AdminUsersPage = () => {
   // Form fields
   const [formName, setFormName] = useState('');
   const [formUsername, setFormUsername] = useState('');
-  const [formRole, setFormRole] = useState('Mustahiq');
-  const [formClassId, setFormClassId] = useState('');
-  const [formPhone, setFormPhone] = useState('');
-  const [formAlamat, setFormAlamat] = useState('');
-  const [formTahunMulai, setFormTahunMulai] = useState('');
-  const [formTahunAkhir, setFormTahunAkhir] = useState('Sekarang');
-  const [formAngkatanAccess, setFormAngkatanAccess] = useState<string[]>([]);
+  const [formRole, setFormRole] = useState<number>(4);
   const [selectedAlumniId, setSelectedAlumniId] = useState('');
-
-  // List of available angkatan values for checkbox selection
-  const listAngkatan = ['Tsanawiyah - Angkatan 2024', 'Tsanawiyah - Angkatan 2025', 'Tsanawiyah - Angkatan 2026'];
 
   const loadData = async () => {
     setLoading(true);
@@ -66,7 +59,6 @@ export const AdminUsersPage = () => {
       const res = await fetchUsers();
       if (res.success && res.data) {
         setUsers(res.data.users);
-        setClasses(res.data.classes);
       }
 
       // Load alumni for promotion
@@ -89,13 +81,7 @@ export const AdminUsersPage = () => {
     setSelectedUser(null);
     setFormName('');
     setFormUsername('');
-    setFormRole('Mustahiq');
-    setFormClassId('');
-    setFormPhone('');
-    setFormAlamat('');
-    setFormTahunMulai(new Date().getFullYear().toString());
-    setFormTahunAkhir('Sekarang');
-    setFormAngkatanAccess(['Tsanawiyah - Angkatan 2024']);
+    setFormRole(4);
     setSelectedAlumniId('');
     setError('');
     setEditModalOpen(true);
@@ -105,26 +91,9 @@ export const AdminUsersPage = () => {
     setSelectedUser(user);
     setFormName(user.name);
     setFormUsername(user.email.split('@')[0] || '');
-    setFormRole(user.role);
-    setFormPhone(user.phone || '');
-    setFormAlamat(user.alamat || '');
-    setFormTahunMulai(user.tahunMulai || '');
-    setFormTahunAkhir(user.tahunAkhir || 'Sekarang');
+    setFormRole(user.role || 4);
     setSelectedAlumniId('');
     
-    // Find matching class
-    const matchClass = classes.find(c => user.assignedClass.includes(c.name.split(' (')[0]));
-    setFormClassId(matchClass?.id || '');
-
-    // Set Initial angkatan access simulated
-    if (user.role === 'Mustahiq' && user.assignedClass.includes('Bagian A')) {
-      setFormAngkatanAccess(['Tsanawiyah - Angkatan 2024']);
-    } else if (user.role === 'Mustahiq' && user.assignedClass.includes('Bagian B')) {
-      setFormAngkatanAccess(['Tsanawiyah - Angkatan 2024', 'Tsanawiyah - Angkatan 2025']);
-    } else {
-      setFormAngkatanAccess(['Tsanawiyah - Angkatan 2024', 'Tsanawiyah - Angkatan 2025', 'Tsanawiyah - Angkatan 2026']);
-    }
-
     setError('');
     setEditModalOpen(true);
   };
@@ -136,21 +105,12 @@ export const AdminUsersPage = () => {
     const selected = alumniList.find(s => s.id === alumniId);
     if (selected) {
       setFormName(selected.name);
-      setFormAlamat(selected.alamatLengkap || '');
-      setFormTahunMulai(new Date().getFullYear().toString());
       // Generate clean email
       const username = selected.name.toLowerCase().replace(/[^a-z0-9]/g, '.');
       setFormUsername(username);
     }
   };
 
-  const handleAngkatanToggle = (angkatan: string) => {
-    setFormAngkatanAccess(prev => 
-      prev.includes(angkatan) 
-        ? prev.filter(a => a !== angkatan)
-        : [...prev, angkatan]
-    );
-  };
 
   const handleDelete = (user: UserAdmin) => {
     showConfirm(
@@ -191,29 +151,6 @@ export const AdminUsersPage = () => {
     );
   };
 
-  const handleSendWA = (user: UserAdmin) => {
-    if (!user.phone) {
-      showToast('Nomor WhatsApp pengguna belum diisi.', 'warning');
-      return;
-    }
-
-    // Format phone
-    let formattedPhone = user.phone.replace(/[^0-9]/g, '');
-    if (formattedPhone.startsWith('0')) {
-      formattedPhone = '62' + formattedPhone.slice(1);
-    }
-
-    const message = `Assalamu'alaikum Wr. Wb. Nyuwun sewu Ust./Ustdh. *${user.name}*, menika informasi akun e-Mubtadi'aat panjenengan ingkang sampun dipun-damelaken dening Admin:
-
-Username: *${user.email}*
-Sandi Default: *mubtadiaat123*
-
-Panjenengan saget mlebet wonten aplikasi lan dipun-suwun nggantos sandi sasampunipun mlebet kaping pisan. Matur nuwun sanget. Wassalamu'alaikum Wr. Wb.`;
-
-    const encodedText = encodeURIComponent(message);
-    const waUrl = `https://api.whatsapp.com/send?phone=${formattedPhone}&text=${encodedText}`;
-    window.open(waUrl, '_blank');
-  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -224,19 +161,12 @@ Panjenengan saget mlebet wonten aplikasi lan dipun-suwun nggantos sandi sasampun
       return;
     }
 
-    const assignedClass = formRole === 'Mustahiq' || formRole === 'Mufatish'
-      ? (classes.find(c => c.id === formClassId)?.name || 'Semua Kelas')
-      : 'Seluruh Lembaga';
+    const email = `${formUsername}@mubtadiaat.id`;
 
     const payload: Partial<UserAdmin> = {
       name: formName.trim(),
-      email: formUsername.includes('@') ? formUsername.trim() : `${formUsername.trim().replace(/\s+/g, '').toLowerCase()}@mubtadiaat.id`,
-      role: formRole,
-      assignedClass,
-      phone: formPhone.trim(),
-      alamat: formAlamat.trim(),
-      tahunMulai: formTahunMulai.trim(),
-      tahunAkhir: formTahunAkhir.trim()
+      email: formUsername.includes('@') ? formUsername.trim() : email,
+      role: formRole
     };
 
     try {
@@ -264,6 +194,39 @@ Panjenengan saget mlebet wonten aplikasi lan dipun-suwun nggantos sandi sasampun
     }
   };
 
+  const handleDownloadTemplate = async () => {
+    await generateExcelTemplate(USER_COLUMNS, 'Template_Pengguna_Mubtadiat.xlsx');
+  };
+
+  const handleExportData = async () => {
+    await exportToExcel(users, USER_COLUMNS, 'Data_Pengguna_Mubtadiat.xlsx');
+  };
+
+  const handleImportData = async (file: File) => {
+    try {
+      setLoading(true);
+      const data = await parseExcel(file);
+      if (data.length === 0) throw new Error('Data kosong');
+      
+      let imported = 0;
+      for (const row of data) {
+        if (row.name && row.email) {
+          await saveUser({
+            name: row.name,
+            email: row.email,
+            role: Number(row.role) || 4,
+          });
+          imported++;
+        }
+      }
+      showToast(`${imported} data pengguna berhasil diimport!`, 'success');
+      loadData();
+    } catch (err: any) {
+      showToast(err.message || 'Gagal mengimport data', 'error');
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6 pb-20">
       {/* Title block */}
@@ -274,22 +237,29 @@ Panjenengan saget mlebet wonten aplikasi lan dipun-suwun nggantos sandi sasampun
             Otorisasi & Pengurus
           </h1>
           <p className="text-slate-500 text-sm font-semibold mt-1">
-            Manajemen akun dan hak akses Mustahiq (Wali Kelas), Mufatish (Pimpinan Tingkat), dan Mundzir (Madrasah).
+            Manajemen akun dan hak akses.
           </p>
         </div>
-        <PremiumButton 
-          onClick={openAddModal}
-          variant="primary"
-          leftIcon={<Plus className="w-5 h-5" />}
-        >
-          Tambah Pengurus
-        </PremiumButton>
+        <div className="flex flex-col items-end gap-3">
+          <PremiumButton 
+            onClick={openAddModal}
+            variant="primary"
+            leftIcon={<Plus className="w-5 h-5" />}
+          >
+            Tambah Pengurus
+          </PremiumButton>
+          <DataExportImport 
+            onDownloadTemplate={handleDownloadTemplate}
+            onExportData={handleExportData}
+            onImportData={handleImportData}
+            isLoading={loading}
+          />
+        </div>
       </div>
 
       {/* Main Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* User table list */}
-        <div className="xl:col-span-2">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="md:col-span-4">
           <GlassCard variant="neumorph" className="overflow-hidden border border-slate-200/50">
             <div className="p-4 bg-slate-50/80 border-b border-slate-200">
               <h3 className="font-extrabold text-xs text-slate-600 uppercase tracking-wider flex items-center gap-2">
@@ -307,9 +277,9 @@ Panjenengan saget mlebet wonten aplikasi lan dipun-suwun nggantos sandi sasampun
               <Table>
                 <Thead>
                   <Tr>
-                    <Th>Tenaga Pendidik</Th>
+                    <Th>Pengguna</Th>
                     <Th>Peran Akses</Th>
-                    <Th>Detail Mengajar</Th>
+                    <Th>Dibuat Pada</Th>
                     <Th className="text-right">Aksi</Th>
                   </Tr>
                 </Thead>
@@ -319,31 +289,22 @@ Panjenengan saget mlebet wonten aplikasi lan dipun-suwun nggantos sandi sasampun
                       <Td>
                         <div className="font-bold text-slate-800">{user.name}</div>
                         <div className="text-[10px] text-slate-400 font-medium mt-0.5">{user.email}</div>
-                        {user.phone && (
-                          <div className="text-[10px] font-bold flex items-center gap-1 mt-1 text-emerald-600">
-                            <Phone className="w-3 h-3" />
-                            {user.phone}
-                          </div>
-                        )}
                       </Td>
                       <Td>
                         <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
-                          user.role === 'Admin / Pimpinan' 
+                          user.role === 1
                             ? 'bg-purple-100 text-purple-700' 
-                            : user.role === 'Mundzir' 
+                            : user.role === 2 
                             ? 'bg-emerald-100 text-emerald-700'
-                            : user.role === 'Mufatish'
+                            : user.role === 3
                             ? 'bg-amber-100 text-amber-700'
                             : 'bg-blue-100 text-blue-700'
                         }`}>
-                          {user.role}
+                          {user.role === 1 ? 'Admin' : user.role === 2 ? 'Mundzir' : user.role === 3 ? 'Mufatish' : 'Mustahiq'}
                         </span>
                       </Td>
                       <Td>
-                        <div className="font-bold text-slate-700">{user.assignedClass}</div>
-                        <div className="text-[10px] text-slate-400 mt-1 font-semibold">
-                          Tahun Mengajar: <span className="text-blue-600">{user.tahunMulai || '-'} s/d {user.tahunAkhir || 'Sekarang'}</span>
-                        </div>
+                        <div className="text-[10px] font-semibold text-slate-500">{user.createdAt || '-'}</div>
                       </Td>
                       <Td className="text-right">
                           <div className="flex items-center justify-end gap-1.5">
@@ -362,13 +323,6 @@ Panjenengan saget mlebet wonten aplikasi lan dipun-suwun nggantos sandi sasampun
                               <Key className="w-3.5 h-3.5" />
                             </button>
                             <button
-                              onClick={() => handleSendWA(user)}
-                              title="Kirim Info Akun via WA"
-                              className="p-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-600 hover:text-emerald-700 transition-colors inline-flex items-center"
-                            >
-                              <MessageSquare className="w-3.5 h-3.5" />
-                            </button>
-                            <button
                               onClick={() => handleDelete(user)}
                               title="Hapus Pengurus"
                               className="p-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-600 transition-colors inline-flex items-center"
@@ -382,39 +336,6 @@ Panjenengan saget mlebet wonten aplikasi lan dipun-suwun nggantos sandi sasampun
                 </Tbody>
               </Table>
             )}
-          </GlassCard>
-        </div>
-
-        {/* Access Rights Policy details */}
-        <div>
-          <GlassCard variant="neumorph" className="p-6 border border-slate-200/50 space-y-4">
-            <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
-              <BookOpen className="w-5 h-5 text-indigo-600" />
-              <h3 className="font-extrabold text-slate-800 text-sm uppercase tracking-tight">Kebijakan Akses</h3>
-            </div>
-            
-            <div className="space-y-4 text-xs font-semibold text-slate-600">
-              <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl">
-                <p className="font-extrabold uppercase text-[10px] text-blue-600 mb-1">Mustahiq (Wali Kelas)</p>
-                <p className="leading-relaxed">
-                  Mengelola data kelas binaan secara langsung di aplikasi PWA mobile, termasuk input nilai dan absensi harian.
-                </p>
-              </div>
-
-              <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl">
-                <p className="font-extrabold uppercase text-[10px] text-amber-600 mb-1">Mufatish (Pimpinan Tingkatan)</p>
-                <p className="leading-relaxed">
-                  Mendapatkan akses monitoring rekapitulasi nilai dan presensi ke angkatan yang ditunjuk untuk pengawasan internal tingkat.
-                </p>
-              </div>
-
-              <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl">
-                <p className="font-extrabold uppercase text-[10px] text-emerald-600 mb-1">Mundzir (Pimpinan Madrasah)</p>
-                <p className="leading-relaxed">
-                  Memiliki akses monitoring menyeluruh (lintas angkatan) untuk memantau grafik perkembangan santri se-madrasah via portal desktop.
-                </p>
-              </div>
-            </div>
           </GlassCard>
         </div>
       </div>
@@ -491,105 +412,18 @@ Panjenengan saget mlebet wonten aplikasi lan dipun-suwun nggantos sandi sasampun
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <SoftInput
-            label="Nomor WhatsApp"
-            value={formPhone}
-            onChange={(e) => setFormPhone(e.target.value)}
-            placeholder="085171542025"
-          />
-          <SoftInput
-            label="Alamat Pengurus"
-            value={formAlamat}
-            onChange={(e) => setFormAlamat(e.target.value)}
-            placeholder="Kec. Mojoroto, Kediri"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <SoftInput
-            label="Tahun Mulai Mengajar"
-            value={formTahunMulai}
-            onChange={(e) => setFormTahunMulai(e.target.value)}
-            placeholder="Contoh: 2024"
-          />
-          <SoftInput
-            label="Tahun Terakhir Mengajar"
-            value={formTahunAkhir}
-            onChange={(e) => setFormTahunAkhir(e.target.value)}
-            placeholder="Contoh: Sekarang"
-          />
-        </div>
-
-        {/* Role Select */}
         <div className="flex flex-col gap-1.5">
           <label className="text-[10px] font-black text-slate-500 uppercase tracking-wide">Peran Sistem (Role)</label>
           <PremiumSelect
             value={formRole}
-            onChange={(e) => setFormRole(e.target.value)}
+            onChange={(e: any) => setFormRole(Number(e.target.value))}
             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold text-slate-700 outline-hidden focus:border-blue-500 focus:bg-white neumorph-pressed"
           >
-            <option value="Mustahiq">Mustahiq (Wali Kelas)</option>
-            <option value="Mufatish">Mufatish (Pimpinan Tingkatan)</option>
-            <option value="Mundzir">Mundzir (Pimpinan Madrasah)</option>
-            <option value="Admin / Pimpinan">Server / Administrator Utama</option>
+            <option value={4}>Mustahiq</option>
+            <option value={3}>Mufatish</option>
+            <option value={2}>Mundzir</option>
+            <option value={1}>Admin</option>
           </PremiumSelect>
-        </div>
-
-        {/* Class Select (Only for Mustahiq/Mufatish) */}
-        {(formRole === 'Mustahiq' || formRole === 'Mufatish') && (
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-black text-slate-500 uppercase tracking-wide">Kelas Utama Binaan</label>
-            <PremiumSelect
-              value={formClassId}
-              onChange={(e) => setFormClassId(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold text-slate-700 outline-hidden focus:border-blue-500 focus:bg-white neumorph-pressed"
-              required
-            >
-              <option value="">-- Pilih Kelas Utama --</option>
-              {classes.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </PremiumSelect>
-          </div>
-        )}
-
-        {/* Angkatan Access Checklist */}
-        <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/40 space-y-3">
-          <label className="text-[10px] font-black text-slate-600 uppercase tracking-wide block border-b border-slate-200 pb-2">
-            Kustomisasi Akses Angkatan (Lintas Kelas)
-          </label>
-          
-          <div className="space-y-2">
-            {listAngkatan.map(angkatan => {
-              const isChecked = formAngkatanAccess.includes(angkatan) || formRole === 'Admin / Pimpinan' || formRole === 'Mundzir';
-              return (
-                <label 
-                  key={angkatan} 
-                  className={`flex items-center justify-between p-3 rounded-xl border text-xs font-bold transition-all cursor-pointer select-none ${
-                    isChecked 
-                      ? 'bg-blue-50/50 border-blue-200 text-blue-800' 
-                       : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                  }`}
-                >
-                  <span>{angkatan}</span>
-                  <input
-                    type="checkbox"
-                    checked={isChecked}
-                    disabled={formRole === 'Admin / Pimpinan' || formRole === 'Mundzir'}
-                    onChange={() => handleAngkatanToggle(angkatan)}
-                    className="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer"
-                  />
-                </label>
-              );
-            })}
-          </div>
-          {(formRole === 'Admin / Pimpinan' || formRole === 'Mundzir') && (
-            <p className="text-[10px] text-slate-400 font-bold uppercase mt-2 flex items-center gap-1.5">
-              <AlertCircle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-              Peran Pimpinan/Admin otomatis memiliki akses penuh ke seluruh angkatan.
-            </p>
-          )}
         </div>
       </Modal>
     </div>

@@ -251,14 +251,16 @@ export const AdminKelasRombelPage = () => {
             </motion.div>
           </div>
           
+          <div className="flex flex-col items-end gap-3 w-full md:w-auto">
           <PremiumButton 
             onClick={openAddModal} 
             variant="primary" 
             leftIcon={<Plus className="w-5 h-5" />}
-            className="w-full md:w-auto bg-emerald-600 hover:bg-emerald-700 shadow-[0_4px_15px_rgba(16,185,129,0.3)] hover:shadow-[0_6px_25px_rgba(16,185,129,0.4)] transition-all"
+            className="w-full md:w-auto shadow-[0_4px_15px_rgba(79,70,229,0.3)] hover:shadow-[0_6px_25px_rgba(79,70,229,0.4)] transition-all"
           >
-            Tambah Kelas Baru
+            Tambah Kelas/Rombel
           </PremiumButton>
+        </div>
         </GlassCard>
       </motion.div>
 
@@ -410,9 +412,21 @@ export const AdminKelasRombelPage = () => {
               <SoftInput
                 value={formBagian}
                 onChange={(e) => setFormBagian(e.target.value)}
-                placeholder="e.g. A, B, atau Putra 1"
+                placeholder="e.g. أ, ب, ج"
                 required
               />
+              <div className="flex flex-wrap gap-1 mt-2">
+                {['أ', 'ب', 'ج', 'د', 'هـ', 'و', 'ز', 'ح', 'ط', 'ي'].map(char => (
+                  <button
+                    key={char}
+                    type="button"
+                    onClick={() => setFormBagian(char)}
+                    className="w-6 h-6 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-emerald-100 hover:text-emerald-700 rounded transition-colors"
+                  >
+                    {char}
+                  </button>
+                ))}
+              </div>
             </div>
             <div>
               <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Lokasi / Gedung</label>
@@ -446,7 +460,7 @@ export const AdminKelasRombelPage = () => {
 
           <div className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-100 space-y-3 mt-2">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-black text-emerald-800 uppercase tracking-widest">Munawwib (Asisten/Pengganti)</h3>
+              <h3 className="text-xs font-black text-emerald-800 uppercase tracking-widest">Munawwib</h3>
               <button type="button" onClick={addMunawwibField} className="text-[10px] font-bold text-emerald-600 hover:text-emerald-800 bg-emerald-100 px-2 py-1 rounded-lg transition-colors">
                 + Tambah Munawwib
               </button>

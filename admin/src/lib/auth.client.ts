@@ -1,9 +1,7 @@
 import { createAuthClient } from "better-auth/react"
 
 export const authClient = createAuthClient({
-    baseURL: import.meta.env.DEV 
-      ? 'http://localhost:8787/api/auth' 
-      : 'https://backend.eppds.workers.dev/api/auth',
+    baseURL: 'https://mubtadiat-db.eppds.workers.dev/api/auth',
     fetchOptions: {
         onRequest: (context) => {
             const token = localStorage.getItem("better-auth.session_token");

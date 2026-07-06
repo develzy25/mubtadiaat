@@ -6,8 +6,7 @@ import {
   Search, 
   Edit3, 
   Trash2, 
-  Save, 
-  Users
+  Save
 } from 'lucide-react';
 import { GlassCard, 
   PremiumButton, 
@@ -18,11 +17,22 @@ import { GlassCard,
   Tr,
   Th,
   Td,
-  Modal, PremiumSelect } from '../components/ui';
+  Modal, PremiumSelect, DataExportImport } from '../components/ui';
 import { useNotificationStore } from '../stores/notificationStore';
 import { fetchSantri } from '../services/admin.service';
 import type { SantriAdmin } from '../services/admin.service';
 import * as masterService from '../services/master.service';
+import { generateExcelTemplate, exportToExcel, parseExcel, type ExcelColumnConfig } from '../utils/excelService';
+
+const BLOK_COLUMNS: ExcelColumnConfig[] = [
+  { key: 'name', header: 'Nama Blok', width: 30, type: 'text', required: true, example: 'Blok A, Al-Ghozali' },
+];
+
+const KAMAR_COLUMNS: ExcelColumnConfig[] = [
+  { key: 'name', header: 'Nama Kamar', width: 30, type: 'text', required: true, example: 'Kamar 01' },
+  { key: 'blokName', header: 'Nama Blok', width: 30, type: 'text', required: true, example: 'Blok A' },
+  { key: 'penasihat', header: 'Nama Penasihat Kamar', width: 30, type: 'text', required: false, example: 'Ust. Fulan' },
+];
 
 export interface BlokItem {
   id: string;
@@ -177,18 +187,70 @@ export const AdminBlokKamarPage = () => {
     );
   };
 
+  const handleDownloadTemplate = async () => {
+    if (activeTab === 'BLOK') {
+      await generateExcelTemplate(BLOK_COLUMNS, 'Template_Blok_Mubtadiat.xlsx');
+    } else {
+      await generateExcelTemplate(KAMAR_COLUMNS, 'Template_Kamar_Mubtadiat.xlsx');
+    }
+  };
+
+  const handleExportData = async () => {
+    if (activeTab === 'BLOK') {
+      await exportToExcel(blokList, BLOK_COLUMNS, 'Data_Blok_Mubtadiat.xlsx');
+    } else {
+      const exportKamar = kamarList.map(k => {
+        const b = blokList.find(b => b.id === k.blokId);
+        return { ...k, blokName: b?.name || '' };
+      });
+      await exportToExcel(exportKamar, KAMAR_COLUMNS, 'Data_Kamar_Mubtadiat.xlsx');
+    }
+  };
+
+  const handleImportData = async (file: File) => {
+    try {
+      const parsedData = await parseExcel(file);
+      if (parsedData.length === 0) throw new Error('Data kosong');
+      
+      let imported = 0;
+      if (activeTab === 'BLOK') {
+        for (const row of parsedData) {
+          if (row.name) {
+            await masterService.createBlok({ name: row.name });
+            imported++;
+          }
+        }
+      } else {
+        for (const row of parsedData) {
+          if (row.name && row.blokName) {
+            const blok = blokList.find(b => b.name.toLowerCase() === String(row.blokName).toLowerCase());
+            if (blok) {
+              await masterService.createKamar({
+                name: row.name,
+                blokId: blok.id,
+                penasihat: row.penasihat || ''
+              });
+              imported++;
+            }
+          }
+        }
+      }
+      showToast(`${imported} data berhasil diimport!`, 'success');
+      loadData();
+    } catch (err: any) {
+      showToast(err.message || 'Gagal mengimport data', 'error');
+    }
+  };
+
   // Derived counts
   const getBlokKamarCount = (blokId: string) => kamarList.filter(k => k.blokId === blokId).length;
   
-  const getKamarOccupants = (name: string) => {
-    return santriList.filter(s => s.kamar === name).length;
+  const getKamarOccupants = (id: string) => {
+    return santriList.filter(s => s.kamarId === id).length;
   };
 
   const getKamarSiswiCount = (kamar: KamarItem) => {
-    const blok = blokList.find(b => b.id === kamar.blokId);
-    if (!blok) return 0;
-    const fullName = `${blok.name} - ${kamar.name}`;
-    return santriList.filter(s => s.kamar === fullName).length;
+    return santriList.filter(s => s.kamarId === kamar.id).length;
   };
 
   const filteredBlok = blokList.filter(b => b.name.toLowerCase().includes(search.toLowerCase()));
@@ -246,6 +308,9 @@ export const AdminBlokKamarPage = () => {
             className="w-full"
           />
         </div>
+      </GlassCard>
+
+      <div className="flex flex-col items-end gap-3 mb-6">
         <PremiumButton 
           onClick={() => {
             if (activeTab === 'BLOK') {
@@ -265,7 +330,12 @@ export const AdminBlokKamarPage = () => {
         >
           Tambah {activeTab === 'BLOK' ? 'Blok' : 'Kamar'}
         </PremiumButton>
-      </GlassCard>
+        <DataExportImport 
+          onDownloadTemplate={handleDownloadTemplate}
+          onExportData={handleExportData}
+          onImportData={handleImportData}
+        />
+      </div>
 
       {/* Content */}
       <GlassCard variant="neumorph" className="overflow-hidden border border-slate-200/50">
@@ -326,65 +396,65 @@ export const AdminBlokKamarPage = () => {
               </Tbody>
             </Table>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-            {filteredKamar.map((kamar) => {
-              const blok = blokList.find(b => b.id === kamar.blokId);
-              const siswiCount = getKamarSiswiCount(kamar);
-              return (
-                <div key={kamar.id} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs hover:shadow-md transition-all relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-linear-to-br from-blue-50 to-transparent rounded-bl-[100px] z-0 opacity-50" />
-                  
-                  <div className="flex justify-between items-start mb-3 relative z-10">
-                    <div>
-                      <div className="text-[10px] font-black text-blue-600 uppercase tracking-widest bg-blue-50 px-2.5 py-1 rounded-md inline-block mb-2">
-                        {blok?.name || 'Blok Tidak Ditemukan'}
-                      </div>
-                      <h3 className="text-lg font-black text-slate-800">{kamar.name}</h3>
-                    </div>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => {
-                          setEditingKamar(kamar);
-                          setFormKamarBlokId(kamar.blokId);
-                          setFormKamarName(kamar.name);
-                          setFormKamarPenasihat(kamar.penasihat);
-                          setKamarModalOpen(true);
-                        }}
-                        className="p-1.5 rounded-lg hover:bg-blue-50 text-slate-400 hover:text-blue-600"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteKamar(kamar.id, blok ? `${blok.name} - ${kamar.name}` : kamar.name)}
-                        className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 relative z-10">
-                    <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 bg-slate-50 px-3 py-2 rounded-xl">
-                      <Users className="w-4 h-4 text-slate-400" />
-                      <span className="flex-1">Penasihat:</span>
-                      <span className="font-extrabold text-slate-800">{kamar.penasihat || '-'}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 bg-slate-50 px-3 py-2 rounded-xl">
-                      <BedDouble className="w-4 h-4 text-slate-400" />
-                      <span className="flex-1">Jumlah Siswi:</span>
-                      <span className="font-black text-blue-600 bg-blue-100/50 px-2 py-0.5 rounded-md">
-                        {siswiCount} Orang
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-            {filteredKamar.length === 0 && (
-              <div className="col-span-full py-12 text-center text-slate-400 font-bold uppercase tracking-wider">
-                Belum ada data kamar.
-              </div>
-            )}
+          <div className="overflow-x-auto">
+            <Table>
+              <Thead>
+                <Tr>
+                  <Th>Blok</Th>
+                  <Th>Kamar</Th>
+                  <Th>Penasihat</Th>
+                  <Th className="text-center">Jumlah Siswi</Th>
+                  <Th className="text-right">Aksi</Th>
+                </Tr>
+              </Thead>
+              <Tbody>
+                {filteredKamar.map((kamar) => {
+                  const blok = blokList.find(b => b.id === kamar.blokId);
+                  const siswiCount = getKamarSiswiCount(kamar);
+                  return (
+                    <Tr key={kamar.id}>
+                      <Td className="font-bold text-blue-600">{blok?.name || '-'}</Td>
+                      <Td className="font-extrabold text-slate-800">{kamar.name}</Td>
+                      <Td className="font-semibold text-slate-600">{kamar.penasihat || '-'}</Td>
+                      <Td className="text-center">
+                        <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full font-black text-[11px] border border-blue-100">
+                          {siswiCount} Siswi
+                        </span>
+                      </Td>
+                      <Td className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => {
+                              setEditingKamar(kamar);
+                              setFormKamarBlokId(kamar.blokId);
+                              setFormKamarName(kamar.name);
+                              setFormKamarPenasihat(kamar.penasihat);
+                              setKamarModalOpen(true);
+                            }}
+                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-blue-50 text-slate-500 hover:text-blue-600 transition-colors"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteKamar(kamar.id, blok ? `${blok.name} - ${kamar.name}` : kamar.name)}
+                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </Td>
+                    </Tr>
+                  );
+                })}
+                {filteredKamar.length === 0 && (
+                  <Tr>
+                    <Td colSpan={5} className="text-center py-12 text-slate-400 font-bold uppercase tracking-wider">
+                      Belum ada data kamar.
+                    </Td>
+                  </Tr>
+                )}
+              </Tbody>
+            </Table>
           </div>
         )}
       </GlassCard>

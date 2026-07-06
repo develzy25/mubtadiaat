@@ -225,14 +225,20 @@ export const AdminDashboard = () => {
                   <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wide">Tren Presensi Santri</h3>
                 </div>
                 <span className="text-[10px] font-black text-blue-600 bg-blue-50 border border-blue-100 px-3 py-1.5 rounded-full uppercase tracking-wider">
-                  Rata-rata: 98.0%
+                  Rata-rata: {attendanceTrends?.length > 0 ? '98.0%' : '0.0%'}
                 </span>
               </div>
             </div>
 
             {/* Live SVG Line Chart with Framer Motion */}
             <div className="relative w-full h-56 mt-4 flex items-end z-10">
-              <svg className="w-full h-full drop-shadow-md" viewBox="0 0 500 150">
+              {attendanceTrends?.length === 0 ? (
+                <div className="w-full h-full flex items-center justify-center text-slate-400 font-bold text-xs uppercase tracking-widest">
+                  Belum ada data presensi
+                </div>
+              ) : (
+                <>
+                  <svg className="w-full h-full drop-shadow-md" viewBox="0 0 500 150">
                 <defs>
                   <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#2563EB" stopOpacity="0.3" />
@@ -299,6 +305,8 @@ export const AdminDashboard = () => {
                   <span key={t.month}>{t.month} ({t.rate}%)</span>
                 ))}
               </div>
+                </>
+              )}
             </div>
           </GlassCard>
         </motion.div>
@@ -362,14 +370,14 @@ export const AdminDashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             
             {/* 1. Master Asatidz */}
-            <Link to="/admin/asatidz" className="p-4 rounded-xl border border-slate-200/50 bg-white/40 hover:bg-white hover:shadow-lg hover:shadow-slate-200/40 flex flex-col justify-between group transition-all relative overflow-hidden h-36">
+            <Link to="/asatidz" className="p-4 rounded-xl border border-slate-200/50 bg-white/40 hover:bg-white hover:shadow-lg hover:shadow-slate-200/40 flex flex-col justify-between group transition-all relative overflow-hidden h-36">
               <div className="absolute top-0 right-0 w-20 h-20 bg-blue-100/50 rounded-bl-full -z-10 group-hover:scale-150 transition-transform duration-500" />
               <div>
                 <p className="text-xs font-black text-slate-700 uppercase">1. Master Pengurus</p>
                 <div className="mt-2.5 w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
-                  <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: '80%' }}></div>
+                  <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${Math.min(100, (metrics?.usersCount || 0) * 10)}%` }}></div>
                 </div>
-                <p className="text-[9px] font-bold text-slate-400 mt-1.5 uppercase tracking-wide">Data Terisi 80%</p>
+                <p className="text-[9px] font-bold text-slate-400 mt-1.5 uppercase tracking-wide">Data Terisi: {metrics?.usersCount || 0}</p>
               </div>
               <div className="flex items-center justify-between mt-4">
                 <span className="text-[10px] font-bold text-blue-600 uppercase">Isi Data</span>
@@ -380,14 +388,14 @@ export const AdminDashboard = () => {
             </Link>
 
             {/* 2. Master Kamar */}
-            <Link to="/admin/kamar" className="p-4 rounded-xl border border-slate-200/50 bg-white/40 hover:bg-white hover:shadow-lg hover:shadow-slate-200/40 flex flex-col justify-between group transition-all relative overflow-hidden h-36">
+            <Link to="/blok-kamar" className="p-4 rounded-xl border border-slate-200/50 bg-white/40 hover:bg-white hover:shadow-lg hover:shadow-slate-200/40 flex flex-col justify-between group transition-all relative overflow-hidden h-36">
               <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-100/50 rounded-bl-full -z-10 group-hover:scale-150 transition-transform duration-500" />
               <div>
                 <p className="text-xs font-black text-slate-700 uppercase">2. Master Kamar</p>
                 <div className="mt-2.5 w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
-                  <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: '100%' }}></div>
+                  <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: `${Math.min(100, (metrics?.kamarCount || 0) * 5)}%` }}></div>
                 </div>
-                <p className="text-[9px] font-bold text-slate-400 mt-1.5 uppercase tracking-wide">Data Terisi 100%</p>
+                <p className="text-[9px] font-bold text-slate-400 mt-1.5 uppercase tracking-wide">Data Terisi: {metrics?.kamarCount || 0}</p>
               </div>
               <div className="flex items-center justify-between mt-4">
                 <span className="text-[10px] font-bold text-emerald-600 uppercase">Isi Data</span>
@@ -398,14 +406,14 @@ export const AdminDashboard = () => {
             </Link>
 
             {/* 3. Master Kelas */}
-            <Link to="/admin/kelas-rombel" className="p-4 rounded-xl border border-slate-200/50 bg-white/40 hover:bg-white hover:shadow-lg hover:shadow-slate-200/40 flex flex-col justify-between group transition-all relative overflow-hidden h-36">
+            <Link to="/kelas-rombel" className="p-4 rounded-xl border border-slate-200/50 bg-white/40 hover:bg-white hover:shadow-lg hover:shadow-slate-200/40 flex flex-col justify-between group transition-all relative overflow-hidden h-36">
               <div className="absolute top-0 right-0 w-20 h-20 bg-amber-100/50 rounded-bl-full -z-10 group-hover:scale-150 transition-transform duration-500" />
               <div>
                 <p className="text-xs font-black text-slate-700 uppercase">3. Kelas & Rombel</p>
                 <div className="mt-2.5 w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
-                  <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: '40%' }}></div>
+                  <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: `${Math.min(100, (metrics?.classes || 0) * 10)}%` }}></div>
                 </div>
-                <p className="text-[9px] font-bold text-slate-400 mt-1.5 uppercase tracking-wide">Data Terisi 40%</p>
+                <p className="text-[9px] font-bold text-slate-400 mt-1.5 uppercase tracking-wide">Data Terisi: {metrics?.classes || 0}</p>
               </div>
               <div className="flex items-center justify-between mt-4">
                 <span className="text-[10px] font-bold text-amber-600 uppercase">Isi Data</span>
@@ -416,14 +424,14 @@ export const AdminDashboard = () => {
             </Link>
 
             {/* 4. Santri */}
-            <Link to="/admin/santri" className="p-4 rounded-xl border border-slate-200/50 bg-white/40 hover:bg-white hover:shadow-lg hover:shadow-slate-200/40 flex flex-col justify-between group transition-all relative overflow-hidden h-36">
+            <Link to="/santri" className="p-4 rounded-xl border border-slate-200/50 bg-white/40 hover:bg-white hover:shadow-lg hover:shadow-slate-200/40 flex flex-col justify-between group transition-all relative overflow-hidden h-36">
               <div className="absolute top-0 right-0 w-20 h-20 bg-rose-100/50 rounded-bl-full -z-10 group-hover:scale-150 transition-transform duration-500" />
               <div>
                 <p className="text-xs font-black text-slate-700 uppercase">4. Database Santri</p>
                 <div className="mt-2.5 w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
-                  <div className="bg-rose-500 h-1.5 rounded-full" style={{ width: '10%' }}></div>
+                  <div className="bg-rose-500 h-1.5 rounded-full" style={{ width: `${Math.min(100, (metrics?.santriCount || 0) * 2)}%` }}></div>
                 </div>
-                <p className="text-[9px] font-bold text-slate-400 mt-1.5 uppercase tracking-wide">Data Terisi 10%</p>
+                <p className="text-[9px] font-bold text-slate-400 mt-1.5 uppercase tracking-wide">Data Terisi: {metrics?.santriCount || 0}</p>
               </div>
               <div className="flex items-center justify-between mt-4">
                 <span className="text-[10px] font-bold text-rose-600 uppercase">Isi Data</span>

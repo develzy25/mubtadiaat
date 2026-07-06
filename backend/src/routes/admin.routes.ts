@@ -1,112 +1,83 @@
 import { Hono } from 'hono';
-import { 
-  getAdminStats, 
-  getSantriList, 
-  createSantri,
-  importSantriBatch,
-  updateSantri, 
-  deleteSantri,
-  getUsersList,
-  createUser,
-  updateUser,
-  deleteUser,
-  resetUserPassword,
-  updateUserRole,
-  getAuditLogs,
-  syncGoogleSheets,
-  getProvinces,
-  getRegencies,
-  getDistricts,
-  getVillages
-} from '../controllers/admin.controller';
+import * as adminController from '../controllers/admin.controller';
+import * as jadwalController from '../controllers/jadwal.controller';
+import * as rapotController from '../controllers/rapot.controller';
 
-import {
-  getBlokList, createBlok, updateBlok, deleteBlok,
-  getKamarList, createKamar, updateKamar, deleteKamar,
-  getJenjangList, createJenjang, updateJenjang, deleteJenjang,
-  getTingkatList, createTingkat, updateTingkat, deleteTingkat,
-  getKelasList, createKelas, updateKelas, deleteKelas,
-  getKitabList, createKitab, updateKitab, deleteKitab
-} from '../controllers/master.controller';
+const admin = new Hono();
 
-import {
-  getJadwal, saveJadwalBatch,
-  getRapotGrid, inputRapotBatch, getNilaiAm, getRekap, finalizeKelas
-} from '../controllers/academic.controller';
+// Auth & Users
+admin.get('/users/seed', adminController.seedUsers);
+admin.get('/users', adminController.getUsers);
+admin.post('/users', adminController.createUser);
+admin.put('/users/:id', adminController.updateUser);
+admin.delete('/users/:id', adminController.deleteUser);
+admin.post('/users/:id/reset-password', adminController.resetUserPassword);
 
-const adminRoutes = new Hono();
+// Asatidz (Master Pengurus)
+admin.get('/asatidz', adminController.getAsatidz);
+admin.post('/asatidz', adminController.createAsatidz);
+admin.put('/asatidz/:id', adminController.updateAsatidz);
+admin.delete('/asatidz/:id', adminController.deleteAsatidz);
 
-// Dashboard Stats
-adminRoutes.get('/stats', getAdminStats);
+// Master Wilayah
+admin.get('/infrastruktur/blok', adminController.getBlok);
+admin.post('/infrastruktur/blok', adminController.createBlok);
+admin.put('/infrastruktur/blok/:id', adminController.updateBlok);
+admin.delete('/infrastruktur/blok/:id', adminController.deleteBlok);
 
-// CRUD Santri
-adminRoutes.get('/santri', getSantriList);
-adminRoutes.post('/santri', createSantri);
-adminRoutes.post('/santri/batch', importSantriBatch);
-adminRoutes.put('/santri/:id', updateSantri);
-adminRoutes.delete('/santri/:id', deleteSantri);
+admin.get('/infrastruktur/kamar', adminController.getKamar);
+admin.post('/infrastruktur/kamar', adminController.createKamar);
+admin.put('/infrastruktur/kamar/:id', adminController.updateKamar);
+admin.delete('/infrastruktur/kamar/:id', adminController.deleteKamar);
 
-// User & Role Assignment
-adminRoutes.get('/users', getUsersList);
-adminRoutes.post('/users', createUser);
-adminRoutes.put('/users/:id', updateUser);
-adminRoutes.delete('/users/:id', deleteUser);
-adminRoutes.put('/users/:id/role', updateUserRole);
-adminRoutes.post('/users/:id/reset-password', resetUserPassword);
+// Master Akademik
+admin.get('/akademik/jenjang', adminController.getJenjang);
+admin.post('/akademik/jenjang', adminController.createJenjang);
+admin.put('/akademik/jenjang/:id', adminController.updateJenjang);
+admin.delete('/akademik/jenjang/:id', adminController.deleteJenjang);
 
-// Regions API Proxy
-adminRoutes.get('/regions/provinces', getProvinces);
-adminRoutes.get('/regions/regencies/:provinceId', getRegencies);
-adminRoutes.get('/regions/districts/:regencyId', getDistricts);
-adminRoutes.get('/regions/villages/:districtId', getVillages);
+admin.get('/akademik/tingkat', adminController.getTingkat);
+admin.post('/akademik/tingkat', adminController.createTingkat);
+admin.put('/akademik/tingkat/:id', adminController.updateTingkat);
+admin.delete('/akademik/tingkat/:id', adminController.deleteTingkat);
 
-// Master Data: Blok & Kamar
-adminRoutes.get('/master/blok', getBlokList);
-adminRoutes.post('/master/blok', createBlok);
-adminRoutes.put('/master/blok/:id', updateBlok);
-adminRoutes.delete('/master/blok/:id', deleteBlok);
+admin.get('/akademik/kelas', adminController.getKelas);
+admin.post('/akademik/kelas', adminController.createKelas);
+admin.put('/akademik/kelas/:id', adminController.updateKelas);
+admin.delete('/akademik/kelas/:id', adminController.deleteKelas);
 
-adminRoutes.get('/master/kamar', getKamarList);
-adminRoutes.post('/master/kamar', createKamar);
-adminRoutes.put('/master/kamar/:id', updateKamar);
-adminRoutes.delete('/master/kamar/:id', deleteKamar);
+admin.get('/akademik/kitab', adminController.getKitab);
+admin.post('/akademik/kitab', adminController.createKitab);
+admin.put('/akademik/kitab/:id', adminController.updateKitab);
+admin.delete('/akademik/kitab/:id', adminController.deleteKitab);
 
-// Master Data: Pendidikan (Jenjang, Tingkat, Kelas, Kitab)
-adminRoutes.get('/master/jenjang', getJenjangList);
-adminRoutes.post('/master/jenjang', createJenjang);
-adminRoutes.put('/master/jenjang/:id', updateJenjang);
-adminRoutes.delete('/master/jenjang/:id', deleteJenjang);
+// Santri
+admin.get('/santri', adminController.getSantri);
+admin.post('/santri', adminController.createSantri);
+admin.put('/santri/:id', adminController.updateSantri);
+admin.delete('/santri/:id', adminController.deleteSantri);
 
-adminRoutes.get('/master/tingkat', getTingkatList);
-adminRoutes.post('/master/tingkat', createTingkat);
-adminRoutes.put('/master/tingkat/:id', updateTingkat);
-adminRoutes.delete('/master/tingkat/:id', deleteTingkat);
+// Dashboard Stats & Logs
+admin.get('/stats', adminController.getStats);
+admin.get('/logs', adminController.getLogs);
 
-adminRoutes.get('/master/kelas', getKelasList);
-adminRoutes.post('/master/kelas', createKelas);
-adminRoutes.put('/master/kelas/:id', updateKelas);
-adminRoutes.delete('/master/kelas/:id', deleteKelas);
+// Jadwal Pelajaran (Advanced)
+admin.get('/master/jadwal/:classId', jadwalController.getJadwalByClass);
+admin.post('/master/jadwal/batch', jadwalController.saveJadwalBatch);
 
-adminRoutes.get('/master/kitab', getKitabList);
-adminRoutes.post('/master/kitab', createKitab);
-adminRoutes.put('/master/kitab/:id', updateKitab);
-adminRoutes.delete('/master/kitab/:id', deleteKitab);
+// E-Rapot (Advanced Grid)
+admin.get('/rapot/kelas/:classId', rapotController.getRapotGrid);
+admin.post('/rapot/input', rapotController.saveRapotBatch);
+admin.get('/rapot/nilai-am/:classId', rapotController.fetchNilaiAm);
+admin.get('/rapot/rekap/:santriId', rapotController.fetchRekap);
+admin.post('/rapot/finalize', rapotController.finalizeKelas);
 
-// Academic: Jadwal Pelajaran
-adminRoutes.get('/master/jadwal/:classId', getJadwal);
-adminRoutes.post('/master/jadwal/batch', saveJadwalBatch);
+// Fallbacks for Simple CRUD if needed
+admin.get('/akademik/rapot', adminController.getRapotSemester);
+admin.post('/akademik/rapot', adminController.createRapotSemester);
+admin.put('/akademik/rapot/:id', adminController.updateRapotSemester);
+admin.delete('/akademik/rapot/:id', adminController.deleteRapotSemester);
+admin.post('/akademik/rapot/:id/finalisasi', adminController.finalisasiRapot);
+admin.post('/akademik/rapot/:id/unlock', adminController.unlockRapot);
 
-// Academic: e-Raport
-adminRoutes.get('/rapot/kelas/:classId', getRapotGrid);
-adminRoutes.post('/rapot/input', inputRapotBatch);
-adminRoutes.post('/rapot/finalize', finalizeKelas);
-adminRoutes.get('/rapot/nilai-am/:classId', getNilaiAm);
-adminRoutes.get('/rapot/rekap/:santriId', getRekap);
-
-// Audit logs
-adminRoutes.get('/logs', getAuditLogs);
-
-// Google Sheets Sync
-adminRoutes.post('/sync/sheets', syncGoogleSheets);
-
-export { adminRoutes };
+export default admin;

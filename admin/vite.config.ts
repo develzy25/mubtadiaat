@@ -11,5 +11,12 @@ export default defineConfig({
   server: {
     port: 5174,
     strictPort: true,
+    proxy: {
+      '/api-wilayah': {
+        target: 'https://emsifa.github.io/api-wilayah-indonesia/api',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api-wilayah/, '')
+      }
+    }
   }
 })

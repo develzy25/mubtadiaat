@@ -8,7 +8,7 @@ import {
   Filter
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { fetchSantri, saveSantri, updateSantri, deleteSantri } from '../../services/admin.service';
+import { fetchSantri, saveSantri, updateSantri, deleteSantri, fetchProvinces, fetchRegencies, fetchDistricts, fetchVillages } from '../../services/admin.service';
 import type { SantriAdmin } from '../../services/admin.service';
 import * as masterService from '../../services/master.service';
 import { GlassCard, 
@@ -21,8 +21,24 @@ import { GlassCard,
   Th,
   Td,
   Modal, 
-  PremiumSelect } from '../../components/ui';
+  PremiumSelect,
+  DataExportImport } from '../../components/ui';
 import { useNotificationStore } from '../../stores/notificationStore';
+import { generateExcelTemplate, exportToExcel, parseExcel, type ExcelColumnConfig } from '../../utils/excelService';
+
+const SANTRI_COLUMNS: ExcelColumnConfig[] = [
+  { key: 'name', header: 'Nama Lengkap', width: 30, type: 'text', required: true },
+  { key: 'nik', header: 'NIK', width: 20, type: 'text', required: true },
+  { key: 'noStambuk', header: 'No Stambuk', width: 20, type: 'text', required: true },
+  { key: 'tempatLahir', header: 'Tempat Lahir', width: 20, type: 'text', required: true },
+  { key: 'tanggalLahir', header: 'Tanggal Lahir', width: 15, type: 'date', required: true, example: '2010-01-01' },
+  { key: 'noKk', header: 'No KK', width: 20, type: 'text', required: true },
+  { key: 'namaAyah', header: 'Nama Ayah', width: 25, type: 'text', required: true },
+  { key: 'namaIbu', header: 'Nama Ibu', width: 25, type: 'text', required: true },
+  { key: 'tahunMasuk', header: 'Tahun Masuk', width: 15, type: 'number', required: true, example: '2025' },
+  { key: 'alamatLengkap', header: 'Alamat Lengkap', width: 40, type: 'text', required: true },
+  { key: 'status', header: 'Status', width: 15, type: 'text', required: true, example: 'ACTIVE, CUTI, BOYONG, ALUMNI', note: 'Isi dengan ACTIVE' }
+];
 
 export const SantriTab = () => {
   const { showToast, showConfirm } = useNotificationStore();
@@ -47,9 +63,26 @@ export const SantriTab = () => {
   const [formName, setFormName] = useState('');
   const [formNik, setFormNik] = useState('');
   const [formNoStambuk, setFormNoStambuk] = useState('');
+  const [formTempatLahir, setFormTempatLahir] = useState('');
+  const [formTanggalLahir, setFormTanggalLahir] = useState('');
+  const [formNoKk, setFormNoKk] = useState('');
+  const [formNamaAyah, setFormNamaAyah] = useState('');
+  const [formNamaIbu, setFormNamaIbu] = useState('');
+  const [formTahunMasuk, setFormTahunMasuk] = useState('');
+  const [formProvinsi, setFormProvinsi] = useState('');
+  const [formKabupaten, setFormKabupaten] = useState('');
+  const [formKecamatan, setFormKecamatan] = useState('');
+  const [formKelurahan, setFormKelurahan] = useState('');
+  const [formKodePos, setFormKodePos] = useState('');
   const [formAlamat, setFormAlamat] = useState('');
   const [formKamar, setFormKamar] = useState('');
   const [formKelas, setFormKelas] = useState('');
+
+  // Region Lists
+  const [provinces, setProvinces] = useState<any[]>([]);
+  const [regencies, setRegencies] = useState<any[]>([]);
+  const [districts, setDistricts] = useState<any[]>([]);
+  const [villages, setVillages] = useState<any[]>([]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -64,8 +97,8 @@ export const SantriTab = () => {
       
       if (sRes.success) {
         let data: SantriAdmin[] = sRes.data;
-        if (classFilter) data = data.filter(s => s.classId === classFilter);
-        if (roomFilter) data = data.filter(s => s.kamar === roomFilter);
+        if (classFilter) data = data.filter(s => s.kelasId === classFilter);
+        if (roomFilter) data = data.filter(s => s.kamarId === roomFilter);
         setSantriList(data);
       }
       
@@ -81,7 +114,59 @@ export const SantriTab = () => {
 
   useEffect(() => {
     loadData();
+    // Load provinces once on mount
+    fetchProvinces().then(res => {
+      if(res.success) setProvinces(res.data);
+    });
   }, [classFilter, roomFilter]);
+
+  // Handle region cascading
+  useEffect(() => {
+    if (formProvinsi) {
+      // API expects ID. Wait, formProvinsi could be the name if we save the name to DB.
+      // But we need the ID to fetch regencies. Let's assume formProvinsi stores the ID for dropdown.
+      // Actually we should store the ID in the form state so we can fetch regencies.
+      fetchRegencies(formProvinsi).then(res => setRegencies(res.success ? res.data : []));
+    } else {
+      setRegencies([]);
+    }
+    setFormKabupaten('');
+  }, [formProvinsi]);
+
+  useEffect(() => {
+    if (formKabupaten) {
+      fetchDistricts(formKabupaten).then(res => setDistricts(res.success ? res.data : []));
+    } else {
+      setDistricts([]);
+    }
+    setFormKecamatan('');
+  }, [formKabupaten]);
+
+  useEffect(() => {
+    if (formKecamatan) {
+      fetchVillages(formKecamatan).then(res => setVillages(res.success ? res.data : []));
+    } else {
+      setVillages([]);
+    }
+    setFormKelurahan('');
+  }, [formKecamatan]);
+
+  useEffect(() => {
+    if (formKelurahan && !formKodePos) {
+      const selectedVillage = villages.find(v => v.id === formKelurahan);
+      if (selectedVillage) {
+        // Fetch real postal code using external API
+        fetch(`https://kodepos.vercel.app/search?q=${encodeURIComponent(selectedVillage.name)}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data && data.data && data.data.length > 0) {
+              setFormKodePos(data.data[0].code.toString());
+            }
+          })
+          .catch(err => console.error('Failed to fetch kode pos', err));
+      }
+    }
+  }, [formKelurahan, villages, formKodePos]);
 
   // Click outside to close filter popover
   useEffect(() => {
@@ -103,6 +188,17 @@ export const SantriTab = () => {
     setFormName('');
     setFormNik('');
     setFormNoStambuk('');
+    setFormTempatLahir('');
+    setFormTanggalLahir('');
+    setFormNoKk('');
+    setFormNamaAyah('');
+    setFormNamaIbu('');
+    setFormTahunMasuk('');
+    setFormProvinsi('');
+    setFormKabupaten('');
+    setFormKecamatan('');
+    setFormKelurahan('');
+    setFormKodePos('');
     setFormAlamat('');
     setFormKamar('');
     setFormKelas('');
@@ -114,9 +210,20 @@ export const SantriTab = () => {
     setFormName(item.name);
     setFormNik(item.nik || '');
     setFormNoStambuk(item.noStambuk || '');
+    setFormTempatLahir(item.tempatLahir || '');
+    setFormTanggalLahir(item.tanggalLahir || '');
+    setFormNoKk(item.noKk || '');
+    setFormNamaAyah(item.namaAyah || '');
+    setFormNamaIbu(item.namaIbu || '');
+    setFormTahunMasuk(item.tahunMasuk || '');
+    setFormProvinsi(item.provinsi || '');
+    setFormKabupaten(item.kabupaten || '');
+    setFormKecamatan(item.kecamatan || '');
+    setFormKelurahan(item.kelurahan || '');
+    setFormKodePos(item.kodePos || '');
     setFormAlamat(item.alamatLengkap || '');
-    setFormKamar(item.kamar || '');
-    setFormKelas(item.classId || '');
+    setFormKamar(item.kamarId || '');
+    setFormKelas(item.kelasId || '');
     setModalOpen(true);
   };
 
@@ -127,9 +234,20 @@ export const SantriTab = () => {
       name: formName,
       nik: formNik,
       noStambuk: formNoStambuk,
+      tempatLahir: formTempatLahir,
+      tanggalLahir: formTanggalLahir,
+      noKk: formNoKk,
+      namaAyah: formNamaAyah,
+      namaIbu: formNamaIbu,
+      tahunMasuk: formTahunMasuk,
+      provinsi: formProvinsi,
+      kabupaten: formKabupaten,
+      kecamatan: formKecamatan,
+      kelurahan: formKelurahan,
+      kodePos: formKodePos,
       alamatLengkap: formAlamat,
-      kamar: formKamar,
-      classId: formKelas,
+      kamarId: formKamar,
+      kelasId: formKelas,
       status: 'ACTIVE'
     };
 
@@ -187,6 +305,54 @@ export const SantriTab = () => {
         }
       }
     );
+  };
+
+  const handleDownloadTemplate = async () => {
+    await generateExcelTemplate(SANTRI_COLUMNS, 'Template_Santri_Mubtadiat.xlsx');
+  };
+
+  const handleExportData = async () => {
+    await exportToExcel(santriList, SANTRI_COLUMNS, 'Data_Santri_Mubtadiat.xlsx');
+  };
+
+  const handleImportData = async (file: File) => {
+    try {
+      setLoading(true);
+      const data = await parseExcel(file);
+      if (data.length === 0) throw new Error('Data kosong');
+      
+      let imported = 0;
+      for (const row of data) {
+        if (row.name && row.nik) {
+          await saveSantri({
+            name: row.name,
+            nik: String(row.nik),
+            noStambuk: String(row.noStambuk || ''),
+            tempatLahir: row.tempatLahir || '',
+            tanggalLahir: row.tanggalLahir || '',
+            noKk: String(row.noKk || ''),
+            namaAyah: row.namaAyah || '',
+            namaIbu: row.namaIbu || '',
+            tahunMasuk: String(row.tahunMasuk || new Date().getFullYear()),
+            provinsi: '',
+            kabupaten: '',
+            kecamatan: '',
+            kelurahan: '',
+            kodePos: '',
+            alamatLengkap: row.alamatLengkap || '',
+            status: row.status || 'ACTIVE',
+            kelasId: '',
+            kamarId: ''
+          });
+          imported++;
+        }
+      }
+      showToast(`${imported} data santri berhasil diimport!`, 'success');
+      loadData();
+    } catch (err: any) {
+      showToast(err.message || 'Gagal mengimport data', 'error');
+      setLoading(false);
+    }
   };
 
   const isFilterActive = classFilter !== '' || roomFilter !== '';
@@ -290,6 +456,13 @@ export const SantriTab = () => {
             )}
           </AnimatePresence>
 
+          <DataExportImport 
+            onDownloadTemplate={handleDownloadTemplate}
+            onExportData={handleExportData}
+            onImportData={handleImportData}
+            isLoading={loading}
+          />
+
           <PremiumButton onClick={openAddModal} leftIcon={<Plus className="w-5 h-5" />} className="bg-blue-600 hover:bg-blue-700 shadow-[0_4px_15px_rgba(37,99,235,0.3)]">
             Tambah Santri
           </PremiumButton>
@@ -328,12 +501,12 @@ export const SantriTab = () => {
                   </Td>
                   <Td>
                     <span className="px-2 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-[10px] font-bold">
-                      {kelasList.find(k => k.id === santri.classId) ? `${kelasList.find(k => k.id === santri.classId).jenjangName} ${kelasList.find(k => k.id === santri.classId).tingkatName} ${kelasList.find(k => k.id === santri.classId).bagian}` : (santri.classId || '-')}
+                      {kelasList.find(k => k.id === santri.kelasId) ? `${kelasList.find(k => k.id === santri.kelasId).jenjangName} ${kelasList.find(k => k.id === santri.kelasId).tingkatName} ${kelasList.find(k => k.id === santri.kelasId).bagian}` : (santri.kelasId || '-')}
                     </span>
                   </Td>
                   <Td>
                     <span className="px-2 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold">
-                      {kamarList.find(k => k.id === santri.kamar) ? `${kamarList.find(k => k.id === santri.kamar).blok} - ${kamarList.find(k => k.id === santri.kamar).name}` : (santri.kamar || '-')}
+                      {kamarList.find(k => k.id === santri.kamarId) ? `${kamarList.find(k => k.id === santri.kamarId).blok} - ${kamarList.find(k => k.id === santri.kamarId).name}` : (santri.kamarId || '-')}
                     </span>
                   </Td>
                   <Td>
@@ -388,13 +561,22 @@ export const SantriTab = () => {
         title={editingItem ? 'Edit Data Santri' : 'Tambah Santri Baru'}
       >
         <form onSubmit={handleSave} className="space-y-4">
-          <div>
-            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Nama Lengkap</label>
-            <SoftInput
-              value={formName}
-              onChange={(e) => setFormName(e.target.value)}
-              required
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Nama Lengkap</label>
+              <SoftInput
+                value={formName}
+                onChange={(e) => setFormName(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Tahun Masuk</label>
+              <SoftInput
+                value={formTahunMasuk}
+                onChange={(e) => setFormTahunMasuk(e.target.value)}
+              />
+            </div>
           </div>
           
           <div className="grid grid-cols-2 gap-4">
@@ -413,13 +595,125 @@ export const SantriTab = () => {
               />
             </div>
           </div>
-          
-          <div>
-            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Alamat Lengkap</label>
-            <SoftInput
-              value={formAlamat}
-              onChange={(e) => setFormAlamat(e.target.value)}
-            />
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Tempat Lahir</label>
+              <SoftInput
+                value={formTempatLahir}
+                onChange={(e) => setFormTempatLahir(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Tanggal Lahir</label>
+              <SoftInput
+                type="date"
+                value={formTanggalLahir}
+                onChange={(e) => setFormTanggalLahir(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Nama Ayah</label>
+              <SoftInput
+                value={formNamaAyah}
+                onChange={(e) => setFormNamaAyah(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Nama Ibu</label>
+              <SoftInput
+                value={formNamaIbu}
+                onChange={(e) => setFormNamaIbu(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">No. KK</label>
+              <SoftInput
+                value={formNoKk}
+                onChange={(e) => setFormNoKk(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Alamat Jalan / Lengkap</label>
+              <SoftInput
+                value={formAlamat}
+                onChange={(e) => setFormAlamat(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Provinsi</label>
+              <PremiumSelect
+                value={formProvinsi}
+                onChange={(e: any) => setFormProvinsi(e.target.value)}
+                className="w-full bg-slate-50"
+              >
+                <option value="">Pilih Provinsi</option>
+                {provinces.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </PremiumSelect>
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Kabupaten / Kota</label>
+              <PremiumSelect
+                value={formKabupaten}
+                onChange={(e: any) => setFormKabupaten(e.target.value)}
+                disabled={!formProvinsi}
+                className="w-full bg-slate-50"
+              >
+                <option value="">Pilih Kabupaten</option>
+                {regencies.map(r => (
+                  <option key={r.id} value={r.id}>{r.name}</option>
+                ))}
+              </PremiumSelect>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Kecamatan</label>
+              <PremiumSelect
+                value={formKecamatan}
+                onChange={(e: any) => setFormKecamatan(e.target.value)}
+                disabled={!formKabupaten}
+                className="w-full bg-slate-50"
+              >
+                <option value="">Pilih Kecamatan</option>
+                {districts.map(d => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
+                ))}
+              </PremiumSelect>
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Kelurahan</label>
+              <PremiumSelect
+                value={formKelurahan}
+                onChange={(e: any) => setFormKelurahan(e.target.value)}
+                disabled={!formKecamatan}
+                className="w-full bg-slate-50"
+              >
+                <option value="">Pilih Kelurahan</option>
+                {villages.map(v => (
+                  <option key={v.id} value={v.id}>{v.name}</option>
+                ))}
+              </PremiumSelect>
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Kode Pos</label>
+              <SoftInput
+                value={formKodePos}
+                onChange={(e) => setFormKodePos(e.target.value)}
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

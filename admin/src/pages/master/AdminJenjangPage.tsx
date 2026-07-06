@@ -1,9 +1,16 @@
 import { useState, useEffect } from 'react';
 import { Layers, Plus, Search, Trash2, Edit3, X, Save, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GlassCard, PremiumButton, SoftInput, Table, Thead, Tbody, Tr, Th, Td, Modal } from '../../components/ui';
+import { GlassCard, PremiumButton, SoftInput, Table, Thead, Tbody, Tr, Th, Td, Modal, DataExportImport } from '../../components/ui';
 import { useNotificationStore } from '../../stores/notificationStore';
 import * as masterService from '../../services/master.service';
+import { generateExcelTemplate, exportToExcel, parseExcel, type ExcelColumnConfig } from '../../utils/excelService';
+
+const JENJANG_COLUMNS: ExcelColumnConfig[] = [
+  { key: 'name', header: 'Nama Jenjang', width: 30, type: 'text', required: true, example: 'I\'dadiyah, Ibtida\'iyyah, dll' },
+  { key: 'mundzirName', header: 'Nama Mundzir', width: 30, type: 'text', required: true, example: 'Ust. Haris' },
+];
+/* deduplicated */
 
 interface JenjangItem {
   id: string;
@@ -77,6 +84,36 @@ export const AdminJenjangPage = () => {
       showToast('Gagal menyimpan data', 'error');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDownloadTemplate = async () => {
+    await generateExcelTemplate(JENJANG_COLUMNS, 'Template_Jenjang_Mubtadiat.xlsx');
+  };
+
+  const handleExportData = async () => {
+    await exportToExcel(jenjangList, JENJANG_COLUMNS, 'Data_Jenjang_Mubtadiat.xlsx');
+  };
+
+  const handleImportData = async (file: File) => {
+    try {
+      const parsedData = await parseExcel(file);
+      if (parsedData.length === 0) throw new Error('Data kosong');
+      
+      let imported = 0;
+      for (const row of parsedData) {
+        if (row.name && row.mundzirName) {
+          await masterService.createJenjang({
+            name: row.name,
+            mundzirName: row.mundzirName
+          });
+          imported++;
+        }
+      }
+      showToast(`${imported} data jenjang berhasil diimport!`, 'success');
+      loadData();
+    } catch (err: any) {
+      showToast(err.message || 'Gagal mengimport data', 'error');
     }
   };
 
@@ -155,14 +192,21 @@ export const AdminJenjangPage = () => {
             </motion.div>
           </div>
           
-          <PremiumButton 
-            onClick={openAddModal} 
-            variant="primary" 
-            leftIcon={<Plus className="w-5 h-5" />}
-            className="w-full md:w-auto shadow-[0_4px_15px_rgba(79,70,229,0.3)] hover:shadow-[0_6px_25px_rgba(79,70,229,0.4)] transition-all"
-          >
-            Tambah Jenjang
-          </PremiumButton>
+          <div className="flex flex-col items-end gap-3 w-full md:w-auto">
+            <PremiumButton 
+              onClick={openAddModal} 
+              variant="primary" 
+              leftIcon={<Plus className="w-5 h-5" />}
+              className="w-full md:w-auto shadow-[0_4px_15px_rgba(79,70,229,0.3)] hover:shadow-[0_6px_25px_rgba(79,70,229,0.4)] transition-all"
+            >
+              Tambah Jenjang
+            </PremiumButton>
+            <DataExportImport 
+              onDownloadTemplate={handleDownloadTemplate}
+              onExportData={handleExportData}
+              onImportData={handleImportData}
+            />
+          </div>
         </GlassCard>
       </motion.div>
 

@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "backend",
+  "name": "mubtadiat-db",
   "main": "src/index.ts",
   "compatibility_date": "2026-07-01",
   "compatibility_flags": [
@@ -16,8 +16,8 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "mubtadiat-db",
-      "database_id": "e6b5c53a-6dfc-41c7-987e-26aa5a851302",
+      "database_name": "mubtadiat-db-v2",
+      "database_id": "8d1ef660-9397-4436-8d96-e82e105644fd",
       "migrations_dir": "./migrations"
     }
   ],

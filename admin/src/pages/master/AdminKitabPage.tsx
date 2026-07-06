@@ -1,9 +1,20 @@
 import { useState, useEffect } from 'react';
 import { BookOpen, Plus, Search, Trash2, Edit3, X, Save, RefreshCw, Layers, GraduationCap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GlassCard, PremiumButton, SoftInput, Table, Thead, Tbody, Tr, Th, Td, Modal, PremiumSelect } from '../../components/ui';
+import { GlassCard, PremiumButton, SoftInput, Table, Thead, Tbody, Tr, Th, Td, Modal, PremiumSelect, DataExportImport } from '../../components/ui';
 import { useNotificationStore } from '../../stores/notificationStore';
 import * as masterService from '../../services/master.service';
+import { generateExcelTemplate, exportToExcel, parseExcel, type ExcelColumnConfig } from '../../utils/excelService';
+
+const KITAB_COLUMNS: ExcelColumnConfig[] = [
+  { key: 'name', header: 'Nama Kitab', width: 30, type: 'text', required: true, example: 'Fathul Qorib' },
+  { key: 'jenjangName', header: 'Nama Jenjang', width: 25, type: 'text', required: true, example: 'Ibtida\'iyyah' },
+  { key: 'tingkatName', header: 'Tingkat/Kelas (Romawi)', width: 20, type: 'text', required: true, example: 'I, II, III' },
+  { key: 'fanIlmu', header: 'Fan Ilmu', width: 20, type: 'text', required: true, example: 'Fiqh, Nahwu, Shorof, dll' },
+  { key: 'pengajar', header: 'Pengajar', width: 30, type: 'text', required: true, example: 'Ust. Haris' },
+  { key: 'waktu', header: 'Waktu Ngaji', width: 25, type: 'text', required: true, example: 'Ba\'da Maghrib' },
+];
+/* deduplicated */
 
 interface KitabItem {
   id: string;
@@ -170,6 +181,40 @@ export const AdminKitabPage = () => {
     );
   };
 
+  const handleDownloadTemplate = async () => {
+    await generateExcelTemplate(KITAB_COLUMNS, 'Template_Kitab_Mubtadiat.xlsx');
+  };
+
+  const handleExportData = async () => {
+    await exportToExcel(kitabList, KITAB_COLUMNS, 'Data_Kitab_Mubtadiat.xlsx');
+  };
+
+  const handleImportData = async (file: File) => {
+    try {
+      const parsedData = await parseExcel(file);
+      if (parsedData.length === 0) throw new Error('Data kosong');
+      
+      let imported = 0;
+      for (const row of parsedData) {
+        if (row.name && row.jenjangName && row.tingkatName && row.fanIlmu && row.pengajar && row.waktu) {
+          await masterService.createKitab({
+            name: row.name,
+            jenjangName: row.jenjangName,
+            tingkatName: row.tingkatName,
+            fanIlmu: row.fanIlmu,
+            pengajar: row.pengajar,
+            waktu: row.waktu
+          });
+          imported++;
+        }
+      }
+      showToast(`${imported} data kitab berhasil diimport!`, 'success');
+      loadData();
+    } catch (err: any) {
+      showToast(err.message || 'Gagal mengimport data', 'error');
+    }
+  };
+
   const filteredData = kitabList.filter(k => 
     (k.name || '').toLowerCase().includes(search.toLowerCase()) ||
     (k.jenjangName || '').toLowerCase().includes(search.toLowerCase()) ||
@@ -232,14 +277,21 @@ export const AdminKitabPage = () => {
             </motion.div>
           </div>
           
-          <PremiumButton 
-            onClick={openAddModal} 
-            variant="primary" 
-            leftIcon={<Plus className="w-5 h-5" />}
-            className="w-full md:w-auto bg-amber-500 hover:bg-amber-600 shadow-[0_4px_15px_rgba(245,158,11,0.3)] hover:shadow-[0_6px_25px_rgba(245,158,11,0.4)] transition-all"
-          >
-            Tambah Kitab
-          </PremiumButton>
+          <div className="flex flex-col items-end gap-3 w-full md:w-auto">
+            <PremiumButton 
+              onClick={openAddModal} 
+              variant="primary" 
+              leftIcon={<Plus className="w-5 h-5" />}
+              className="w-full md:w-auto bg-amber-500 hover:bg-amber-600 shadow-[0_4px_15px_rgba(245,158,11,0.3)] hover:shadow-[0_6px_25px_rgba(245,158,11,0.4)] transition-all"
+            >
+              Tambah Kitab
+            </PremiumButton>
+            <DataExportImport 
+              onDownloadTemplate={handleDownloadTemplate}
+              onExportData={handleExportData}
+              onImportData={handleImportData}
+            />
+          </div>
         </GlassCard>
       </motion.div>
 

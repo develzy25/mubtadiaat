@@ -1,0 +1,1 @@
+{"root":["./drizzle.config.ts","./src/index.ts","./src/controllers/admin.controller.ts","./src/db/schema.ts","./src/lib/auth.ts","./src/routes/admin.routes.ts"],"errors":true,"version":"6.0.3"}

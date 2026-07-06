@@ -190,12 +190,12 @@ export const AlumniTab = () => {
                   </Td>
                   <Td>
                     {(() => {
-                      const parts = (santri.classId || '').split('|');
+                      const parts = (santri.kelasId || '').split('|');
                       if (parts.length >= 3) {
                         const cleanPart2 = parts[2].replace(/bagian\s*/i, '').trim();
                         return cleanPart2 ? `${parts[0]} ${cleanPart2} (Tk. ${parts[1]})` : `${parts[0]} (Tk. ${parts[1]})`;
                       }
-                      return santri.classId || '-';
+                      return santri.kelasId || '-';
                     })()}
                   </Td>
                   <Td>

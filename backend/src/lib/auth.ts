@@ -3,6 +3,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { drizzle } from 'drizzle-orm/d1';
 import * as schema from '../db/schema';
 import { bearer } from 'better-auth/plugins';
+import { username } from 'better-auth/plugins';
 
 // This function returns the betterAuth instance configured with the D1 database binding
 export const getAuth = (
@@ -54,6 +55,7 @@ export const getAuth = (
     },
     plugins: [
       bearer(),
+      username(),
     ],
     trustedOrigins: origins,
     secret: env.BETTER_AUTH_SECRET,

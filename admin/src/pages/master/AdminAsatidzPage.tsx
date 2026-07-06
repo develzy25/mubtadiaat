@@ -10,9 +10,16 @@ import {
   Edit3
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GlassCard, PremiumButton, SoftInput, Table, Thead, Tbody, Tr, Th, Td, Modal, PremiumSelect } from '../../components/ui';
+import { GlassCard, PremiumButton, SoftInput, Table, Thead, Tbody, Tr, Th, Td, Modal, PremiumSelect, DataExportImport } from '../../components/ui';
 import { useNotificationStore } from '../../stores/notificationStore';
 import * as masterService from '../../services/master.service';
+import { generateExcelTemplate, exportToExcel, parseExcel, type ExcelColumnConfig } from '../../utils/excelService';
+
+const ASATIDZ_COLUMNS: ExcelColumnConfig[] = [
+  { key: 'name', header: 'Nama Asatidz', width: 30, type: 'text', required: true, example: 'Ust. Haris' },
+  { key: 'role', header: 'Jabatan/Role', width: 25, type: 'text', required: true, example: 'Mustahiq, Mundzir, Mufatish, Munawwib' },
+  { key: 'phone', header: 'No Telepon', width: 20, type: 'text', required: false, example: '081234567890' },
+];
 
 export const AdminAsatidzPage = () => {
   const { showToast, showConfirm } = useNotificationStore();
@@ -149,6 +156,37 @@ export const AdminAsatidzPage = () => {
     window.open(`https://api.whatsapp.com/send?phone=${formatted}&text=${encodeURIComponent(msg)}`, '_blank');
   };
 
+  const handleDownloadTemplate = async () => {
+    await generateExcelTemplate(ASATIDZ_COLUMNS, 'Template_Asatidz_Mubtadiat.xlsx');
+  };
+
+  const handleExportData = async () => {
+    await exportToExcel(data, ASATIDZ_COLUMNS, 'Data_Asatidz_Mubtadiat.xlsx');
+  };
+
+  const handleImportData = async (file: File) => {
+    try {
+      const parsedData = await parseExcel(file);
+      if (parsedData.length === 0) throw new Error('Data kosong');
+      
+      let imported = 0;
+      for (const row of parsedData) {
+        if (row.name && row.role) {
+          await masterService.createAsatidz({
+            name: row.name,
+            role: row.role as any,
+            phone: row.phone ? String(row.phone) : ''
+          });
+          imported++;
+        }
+      }
+      showToast(`${imported} data asatidz berhasil diimport!`, 'success');
+      loadData();
+    } catch (err: any) {
+      showToast(err.message || 'Gagal mengimport data', 'error');
+    }
+  };
+
   const filteredData = data.filter(d => {
     const matchSearch = d.name.toLowerCase().includes(search.toLowerCase());
     const matchRole = roleFilter ? d.role === roleFilter : true;
@@ -169,8 +207,15 @@ export const AdminAsatidzPage = () => {
             Kelola data Mundzir, Mufatish, Mustahiq, dan Munawwib.
           </p>
         </div>
-        <PremiumButton onClick={openAddModal} leftIcon={<Plus className="w-4 h-4" />} className="py-2 px-4 shadow-md bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold flex items-center gap-2">Tambah Pengurus
-        </PremiumButton>
+        <div className="flex flex-col items-end gap-3">
+          <PremiumButton onClick={openAddModal} leftIcon={<Plus className="w-4 h-4" />} className="py-2 px-4 shadow-md bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold flex items-center gap-2">Tambah Pengurus
+          </PremiumButton>
+          <DataExportImport 
+            onDownloadTemplate={handleDownloadTemplate}
+            onExportData={handleExportData}
+            onImportData={handleImportData}
+          />
+        </div>
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>

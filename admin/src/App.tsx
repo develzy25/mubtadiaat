@@ -3,6 +3,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './cache/queryClient';
 import { AdminLayout } from './layouts/AdminLayout';
 import { LoginPage } from './pages/auth/LoginPage';
+import { useSession } from './lib/auth.client';
 
 // Admin Pages
 import { AdminDashboard } from './pages/AdminDashboard';
@@ -20,6 +21,19 @@ import { AdminKelasRombelPage } from './pages/master/AdminKelasRombelPage';
 import { AdminKitabPage } from './pages/master/AdminKitabPage';
 import { AdminAsatidzPage } from './pages/master/AdminAsatidzPage';
 
+const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles: number[] }) => {
+  const { data: session, isPending } = useSession();
+  
+  if (isPending) return <div>Memuat sesi...</div>;
+
+  const user = session?.user as any;
+  // Role 1 = Admin, 2 = Mundzir, 3 = Mufatish, 4 = Mustahiq
+  if (!user || !allowedRoles.includes(user.role)) {
+    return <Navigate to="/login" replace />;
+  }
+  return <>{children}</>;
+};
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -28,7 +42,7 @@ function App() {
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<LoginPage />} />
           
-          <Route element={<AdminLayout />}>
+          <Route element={<ProtectedRoute allowedRoles={[1]}><AdminLayout /></ProtectedRoute>}>
             <Route path="/dashboard" element={<AdminDashboard />} />
             
             <Route path="/santri" element={<AdminSantriPage />} />

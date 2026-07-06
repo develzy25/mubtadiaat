@@ -1,64 +1,49 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
-import { getAuth } from './lib/auth';
-import { dashboardRoutes } from './routes/dashboard.routes';
-import { attendanceRoutes } from './routes/attendance.routes';
-import { adminRoutes } from './routes/admin.routes';
+import { prettyJSON } from 'hono/pretty-json';
+import { initDb } from './db/index';
 
-type Bindings = {
-  DB: D1Database;
-  BETTER_AUTH_SECRET: string;
-  BETTER_AUTH_URL: string;
-};
+import adminRoutes from './routes/admin.routes';
+import mobileRoutes from './routes/mobile.routes';
 
-const app = new Hono<{ Bindings: Bindings }>();
+const app = new Hono<{ Bindings: any }>();
+
+app.use('*', async (c, next) => {
+  initDb(c.env.DB);
+  await next();
+});
 
 app.use('*', logger());
-app.use('*', cors({
-  origin: (origin) => {
-    if (!origin) return 'https://mubtadiaat.pages.dev';
-    if (
-      origin === 'http://localhost:5173' ||
-      origin === 'http://localhost:5174' ||
-      origin === 'http://localhost:8081'
-    ) {
-      return origin;
-    }
-    return 'http://localhost:5174';
-  },
-  allowHeaders: ['Content-Type', 'Authorization', 'Origin', 'Accept'],
-  allowMethods: ['POST', 'GET', 'OPTIONS', 'PUT', 'DELETE'],
+app.use('*', prettyJSON());
+
+app.use('/api/*', cors({
+  origin: (origin) => origin || '*',
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization'],
   exposeHeaders: ['Content-Length'],
   maxAge: 600,
   credentials: true,
 }));
 
-// Basic Health Check
-app.get('/api/health', (c) => {
-  return c.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
+app.get('/api/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
-// Dashboard routes
-app.route('/api/dashboard', dashboardRoutes);
-
-// Attendance routes
-app.route('/api/attendance', attendanceRoutes);
-
-// Admin routes
 app.route('/api/admin', adminRoutes);
+app.route('/api/mobile', mobileRoutes);
 
-// Better Auth API routes handler
-app.all('/api/auth/*', (c) => {
-  const auth = getAuth(
-    {
-      DB: c.env.DB,
-      BETTER_AUTH_SECRET: c.env.BETTER_AUTH_SECRET,
-      BETTER_AUTH_URL: c.env.BETTER_AUTH_URL,
-    },
-    c.req.url
-  );
+import { getAuth } from './lib/auth.js';
+
+app.on(['POST', 'GET'], '/api/auth/**', (c) => {
+  console.log("AUTH REQUEST:", c.req.url, c.req.method);
+  const auth = getAuth(c.env, c.req.url);
   return auth.handler(c.req.raw);
 });
 
-export default app;
+// Export for Cloudflare Workers
+export default {
+  fetch(request: Request, env: any, ctx: ExecutionContext) {
+    // Inject D1 connection into global state or pass via Hono context if needed
+    // The current db.ts architecture uses a generic approach. Let's make sure it's valid.
+    return app.fetch(request, env, ctx);
+  }
+};

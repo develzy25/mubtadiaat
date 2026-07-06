@@ -21,7 +21,7 @@ export const LoginPage = () => {
     setError('');
 
     // Format username to simulated email under the hood for BetterAuth compliance
-    const formattedEmail = username.includes('@') ? username : `${username}@mubtadiaat.id`;
+    const formattedEmail = username.includes('@') ? username : `${username}@mubtadiaat.local`;
 
     try {
       const { data: authData, error: signInError } = await signIn.email({

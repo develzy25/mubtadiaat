@@ -10,23 +10,35 @@ export const offlineQueue = sqliteTable('offline_queue', {
   createdAt: text('created_at').notNull(),
 });
 
-// Create expo-sqlite instance
-const expoDb = SQLite.openDatabaseSync('mubtadiaat.db');
+import { Platform } from 'react-native';
 
-// Enable WAL for better performance
-expoDb.execSync(
-  'PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;'
-);
+// Export a mock db if we are on web and SharedArrayBuffer is missing
+let expoDb: any = null;
+export let db: any = null;
 
-// Create table if not exists (sync initialization)
-expoDb.execSync(`
-  CREATE TABLE IF NOT EXISTS offline_queue (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    action TEXT NOT NULL,
-    payload TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'PENDING',
-    created_at TEXT NOT NULL
-  );
-`);
+try {
+  if (Platform.OS !== 'web' || typeof SharedArrayBuffer !== 'undefined') {
+    // Create expo-sqlite instance
+    expoDb = SQLite.openDatabaseSync('mubtadiaat.db');
 
-export const db = drizzle(expoDb);
+    // Enable WAL for better performance
+    expoDb.execSync(
+      'PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;'
+    );
+
+    // Create table if not exists (sync initialization)
+    expoDb.execSync(`
+      CREATE TABLE IF NOT EXISTS offline_queue (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        action TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'PENDING',
+        created_at TEXT NOT NULL
+      );
+    `);
+
+    db = drizzle(expoDb);
+  }
+} catch (e) {
+  console.warn('SQLite initialization failed (expected on Web without COOP/COEP headers). Offline queue will not work.');
+}

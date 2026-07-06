@@ -5,6 +5,8 @@ import { GlassCard, PremiumButton, SoftInput, Table, Thead, Tbody, Tr, Th, Td, M
 import { useNotificationStore } from '../../stores/notificationStore';
 import * as masterService from '../../services/master.service';
 
+
+
 interface TingkatItem {
   id: string;
   jenjangName: string;
@@ -249,14 +251,16 @@ export const AdminTingkatPage = () => {
             </motion.div>
           </div>
           
+          <div className="flex flex-col items-end gap-3 w-full md:w-auto">
           <PremiumButton 
             onClick={openAddModal} 
             variant="primary" 
             leftIcon={<Plus className="w-5 h-5" />}
-            className="w-full md:w-auto bg-purple-600 hover:bg-purple-700 shadow-[0_4px_15px_rgba(168,85,247,0.3)] hover:shadow-[0_6px_25px_rgba(168,85,247,0.4)] transition-all"
+            className="w-full md:w-auto shadow-[0_4px_15px_rgba(79,70,229,0.3)] hover:shadow-[0_6px_25px_rgba(79,70,229,0.4)] transition-all"
           >
             Tambah Tingkat
           </PremiumButton>
+        </div>
         </GlassCard>
       </motion.div>
 

@@ -24,7 +24,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [expandedGroup, setExpandedGroup] = useState<string>('akademik');
+  const [expandedGroup, setExpandedGroup] = useState<string>('');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [searchFocused, setSearchFocused] = useState(false);
   
