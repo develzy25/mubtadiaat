@@ -3,8 +3,9 @@ name: Release Multi-Platform
 on:
   workflow_dispatch:
   push:
-    tags:
-      - 'v*.*.25' # Only trigger on tags ending with .25 (e.g., v1.0.25)
+    branches:
+      - 'master'
+      - 'main'
 
 jobs:
   build-and-deploy:
