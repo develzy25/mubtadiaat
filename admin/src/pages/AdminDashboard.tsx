@@ -94,9 +94,9 @@ export const AdminDashboard = () => {
       shadow: 'shadow-[0_8px_20px_rgba(37,99,235,0.3)]'
     },
     {
-      title: 'Santri Cuti',
-      value: metrics.cuti,
-      sub: 'Izin cuti sementara',
+      title: 'Total Pengurus',
+      value: metrics.asatidz || 0,
+      sub: 'Mundzir, Mufatish, dll',
       icon: <UserCheck className="w-6 h-6 text-white" />,
       gradient: 'from-amber-400 to-orange-500',
       shadow: 'shadow-[0_8px_20px_rgba(245,158,11,0.3)]'

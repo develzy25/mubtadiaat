@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BookOpen, Plus, Search, Trash2, Edit3, X, Save, RefreshCw, Layers, GraduationCap } from 'lucide-react';
+import { BookOpen, Plus, Search, Trash2, Edit3, X, Save, RefreshCw, GraduationCap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard, PremiumButton, SoftInput, Table, Thead, Tbody, Tr, Th, Td, Modal, PremiumSelect, DataExportImport } from '../../components/ui';
 import { useNotificationStore } from '../../stores/notificationStore';
@@ -11,19 +11,16 @@ const KITAB_COLUMNS: ExcelColumnConfig[] = [
   { key: 'jenjangName', header: 'Nama Jenjang', width: 25, type: 'text', required: true, example: 'Ibtida\'iyyah' },
   { key: 'tingkatName', header: 'Tingkat/Kelas (Romawi)', width: 20, type: 'text', required: true, example: 'I, II, III' },
   { key: 'fanIlmu', header: 'Fan Ilmu', width: 20, type: 'text', required: true, example: 'Fiqh, Nahwu, Shorof, dll' },
-  { key: 'pengajar', header: 'Pengajar', width: 30, type: 'text', required: true, example: 'Ust. Haris' },
-  { key: 'waktu', header: 'Waktu Ngaji', width: 25, type: 'text', required: true, example: 'Ba\'da Maghrib' },
 ];
-/* deduplicated */
 
 interface KitabItem {
   id: string;
   name: string;
-  jenjangName: string;
+  tingkatId: string;
   tingkatName: string;
+  jenjangId: string;
+  jenjangName: string;
   fanIlmu: string;
-  pengajar: string;
-  waktu: string;
 }
 
 interface JenjangItem {
@@ -33,6 +30,7 @@ interface JenjangItem {
 
 interface TingkatItem {
   id: string;
+  jenjangId: string;
   jenjangName: string;
   romanName: string;
 }
@@ -63,11 +61,9 @@ export const AdminKitabPage = () => {
   const [editingItem, setEditingItem] = useState<KitabItem | null>(null);
   
   const [formName, setFormName] = useState('');
-  const [formJenjang, setFormJenjang] = useState('');
-  const [formTingkat, setFormTingkat] = useState('');
+  const [formJenjangId, setFormJenjangId] = useState('');
+  const [formTingkatId, setFormTingkatId] = useState('');
   const [formFan, setFormFan] = useState('Fiqh');
-  const [formPengajar, setFormPengajar] = useState('');
-  const [formWaktu, setFormWaktu] = useState('');
   
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -94,46 +90,44 @@ export const AdminKitabPage = () => {
   }, []);
 
   useEffect(() => {
-    if (jenjangList.length > 0 && !formJenjang) {
-      setFormJenjang(jenjangList[0].name);
+    if (jenjangList.length > 0 && !formJenjangId) {
+      setFormJenjangId(jenjangList[0].id);
     }
   }, [jenjangList]);
 
   useEffect(() => {
-    const list = tingkatList.filter(t => t.jenjangName === formJenjang);
-    if (list.length > 0) {
-      if (!list.find(t => t.romanName === formTingkat)) {
-        setFormTingkat(list[0].romanName);
+    const filteredTingkat = tingkatList.filter(t => t.jenjangId === formJenjangId);
+    if (filteredTingkat.length > 0) {
+      if (!filteredTingkat.find(t => t.id === formTingkatId)) {
+        setFormTingkatId(filteredTingkat[0].id);
       }
     } else {
-      setFormTingkat('');
+      setFormTingkatId('');
     }
-  }, [formJenjang, tingkatList]);
+  }, [formJenjangId, tingkatList]);
 
   const openAddModal = () => {
     setEditingItem(null);
     setFormName('');
-    if (jenjangList.length > 0) setFormJenjang(jenjangList[0].name);
+    if (jenjangList.length > 0) setFormJenjangId(jenjangList[0].id);
     setFormFan('Fiqh');
-    setFormPengajar('');
-    setFormWaktu('');
     setModalOpen(true);
   };
 
   const openEditModal = (item: KitabItem) => {
     setEditingItem(item);
     setFormName(item.name);
-    setFormJenjang(item.jenjangName);
-    setFormTingkat(item.tingkatName);
+    // Find the jenjang id for the tingkat
+    const t = tingkatList.find(t => t.id === item.tingkatId);
+    if (t) setFormJenjangId(t.jenjangId);
+    setFormTingkatId(item.tingkatId);
     setFormFan(item.fanIlmu);
-    setFormPengajar(item.pengajar);
-    setFormWaktu(item.waktu || '');
     setModalOpen(true);
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formName || !formJenjang || !formTingkat || !formFan || !formPengajar) {
+    if (!formName || !formTingkatId || !formFan) {
       showToast('Mohon lengkapi semua field wajib', 'error');
       return;
     }
@@ -141,11 +135,8 @@ export const AdminKitabPage = () => {
     setIsSubmitting(true);
     const payload = {
       name: formName,
-      jenjangName: formJenjang,
-      tingkatName: formTingkat,
+      tingkatId: formTingkatId,
       fanIlmu: formFan,
-      pengajar: formPengajar,
-      waktu: formWaktu
     };
 
     try {
@@ -196,14 +187,14 @@ export const AdminKitabPage = () => {
       
       let imported = 0;
       for (const row of parsedData) {
-        if (row.name && row.jenjangName && row.tingkatName && row.fanIlmu && row.pengajar && row.waktu) {
+        if (row.name && row.jenjangName && row.tingkatName && row.fanIlmu) {
+          const matchedTingkat = tingkatList.find(t => t.romanName === row.tingkatName && t.jenjangName === row.jenjangName);
+          if (!matchedTingkat) continue;
+
           await masterService.createKitab({
-            name: row.name,
-            jenjangName: row.jenjangName,
-            tingkatName: row.tingkatName,
-            fanIlmu: row.fanIlmu,
-            pengajar: row.pengajar,
-            waktu: row.waktu
+            name: String(row.name),
+            tingkatId: matchedTingkat.id,
+            fanIlmu: String(row.fanIlmu),
           });
           imported++;
         }
@@ -215,12 +206,10 @@ export const AdminKitabPage = () => {
     }
   };
 
+  // Safe search filtering
   const filteredData = kitabList.filter(k => 
     (k.name || '').toLowerCase().includes(search.toLowerCase()) ||
-    (k.jenjangName || '').toLowerCase().includes(search.toLowerCase()) ||
-    (k.tingkatName || '').toLowerCase().includes(search.toLowerCase()) ||
-    (k.fanIlmu || '').toLowerCase().includes(search.toLowerCase()) ||
-    (k.pengajar || '').toLowerCase().includes(search.toLowerCase())
+    (k.fanIlmu || '').toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -260,7 +249,7 @@ export const AdminKitabPage = () => {
           <div className="relative w-full md:w-96">
             <motion.div whileFocus={{ scale: 1.02 }} className="relative">
               <SoftInput
-                placeholder="Cari nama kitab, fan ilmu, atau pengajar..."
+                placeholder="Cari nama kitab, atau fan ilmu..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 leftIcon={<Search className="w-5 h-5 text-amber-500" />}
@@ -277,7 +266,12 @@ export const AdminKitabPage = () => {
             </motion.div>
           </div>
           
-          <div className="flex flex-col items-end gap-3 w-full md:w-auto">
+          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end relative">
+            <DataExportImport 
+              onDownloadTemplate={handleDownloadTemplate}
+              onExportData={handleExportData}
+              onImportData={handleImportData}
+            />
             <PremiumButton 
               onClick={openAddModal} 
               variant="primary" 
@@ -286,11 +280,6 @@ export const AdminKitabPage = () => {
             >
               Tambah Kitab
             </PremiumButton>
-            <DataExportImport 
-              onDownloadTemplate={handleDownloadTemplate}
-              onExportData={handleExportData}
-              onImportData={handleImportData}
-            />
           </div>
         </GlassCard>
       </motion.div>
@@ -313,8 +302,6 @@ export const AdminKitabPage = () => {
                 <Tr className="bg-slate-50/50">
                   <Th className="font-black text-slate-500 uppercase tracking-widest text-[10px]">Nama Kitab & Fan Ilmu</Th>
                   <Th className="font-black text-slate-500 uppercase tracking-widest text-[10px]">Target Kelas</Th>
-                  <Th className="font-black text-slate-500 uppercase tracking-widest text-[10px]">Pengajar Khusus</Th>
-                  <Th className="font-black text-slate-500 uppercase tracking-widest text-[10px]">Waktu Mengaji</Th>
                   <Th className="font-black text-slate-500 uppercase tracking-widest text-[10px] text-right">Aksi</Th>
                 </Tr>
               </Thead>
@@ -352,28 +339,11 @@ export const AdminKitabPage = () => {
                             <GraduationCap className="w-4 h-4 text-slate-400" />
                             Tingkat {item.tingkatName}
                           </div>
-                          <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                            <Layers className="w-3.5 h-3.5" />
-                            {item.jenjangName}
-                          </div>
                         </div>
                       </Td>
                       <Td>
-                        <span className="font-bold text-slate-600 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm inline-block group-hover:border-amber-200 transition-colors">
-                          {item.pengajar}
-                        </span>
-                      </Td>
-                      <Td>
-                        {item.waktu ? (
-                          <span className="font-medium text-slate-600">
-                            {item.waktu}
-                          </span>
-                        ) : (
-                          <span className="text-slate-400 italic text-xs">Menyesuaikan</span>
-                        )}
-                      </Td>
-                      <Td className="text-right space-x-2">
-                        <button
+                        <div className="flex items-center justify-end gap-2">
+                          <button
                           onClick={() => openEditModal(item)}
                           className="p-2 rounded-xl text-blue-500 hover:bg-blue-50 hover:text-blue-600 transition-colors focus:outline-hidden"
                           title="Edit"
@@ -387,6 +357,7 @@ export const AdminKitabPage = () => {
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
+                        </div>
                       </Td>
                     </motion.tr>
                   ))}
@@ -394,7 +365,7 @@ export const AdminKitabPage = () => {
                 
                 {filteredData.length === 0 && (
                   <Tr>
-                    <Td colSpan={5} className="text-center py-24 text-slate-400">
+                    <Td colSpan={3} className="text-center py-24 text-slate-400">
                       <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-20" />
                       <p className="font-bold text-sm">Tidak ada data kitab ditemukan</p>
                     </Td>
@@ -427,59 +398,39 @@ export const AdminKitabPage = () => {
             <div>
               <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Jenjang</label>
               <PremiumSelect
-                value={formJenjang}
-                onChange={(e) => setFormJenjang(e.target.value)}
+                value={formJenjangId}
+                onChange={(e) => setFormJenjangId(e.target.value)}
                 className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-bold text-slate-700 focus:outline-hidden focus:border-amber-500 transition-colors"
                 required
               >
-                {jenjangList.map(j => <option key={j.id} value={j.name}>{j.name}</option>)}
+                {jenjangList.map(j => <option key={j.id} value={j.id}>{j.name}</option>)}
               </PremiumSelect>
             </div>
             <div>
               <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Tingkat</label>
               <PremiumSelect
-                value={formTingkat}
-                onChange={(e) => setFormTingkat(e.target.value)}
+                value={formTingkatId}
+                onChange={(e) => setFormTingkatId(e.target.value)}
                 className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-bold text-slate-700 focus:outline-hidden focus:border-amber-500 transition-colors"
                 required
               >
-                {tingkatList.filter(t => t.jenjangName === formJenjang).map(t => (
-                  <option key={t.id} value={t.romanName}>{t.romanName}</option>
+                {tingkatList.filter(t => t.jenjangId === formJenjangId).map(t => (
+                  <option key={t.id} value={t.id}>{t.romanName}</option>
                 ))}
               </PremiumSelect>
             </div>
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Fan Ilmu (Kategori)</label>
-              <PremiumSelect
-                value={formFan}
-                onChange={(e) => setFormFan(e.target.value)}
-                className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-bold text-slate-700 focus:outline-hidden focus:border-amber-500 transition-colors"
-                required
-              >
-                {FAN_ILMU_OPTIONS.map(f => <option key={f} value={f}>{f}</option>)}
-              </PremiumSelect>
-            </div>
-            <div>
-              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Pengajar Kitab</label>
-              <SoftInput
-                value={formPengajar}
-                onChange={(e) => setFormPengajar(e.target.value)}
-                placeholder="e.g. K.H. Ahmad"
-                required
-              />
-            </div>
-          </div>
-
           <div>
-            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Waktu / Jadwal Khusus (Opsional)</label>
-            <SoftInput
-              value={formWaktu}
-              onChange={(e) => setFormWaktu(e.target.value)}
-              placeholder="e.g. Ba'da Maghrib"
-            />
+            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Fan Ilmu (Kategori)</label>
+            <PremiumSelect
+              value={formFan}
+              onChange={(e) => setFormFan(e.target.value)}
+              className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-bold text-slate-700 focus:outline-hidden focus:border-amber-500 transition-colors"
+              required
+            >
+              {FAN_ILMU_OPTIONS.map(f => <option key={f} value={f}>{f}</option>)}
+            </PremiumSelect>
           </div>
 
           <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">

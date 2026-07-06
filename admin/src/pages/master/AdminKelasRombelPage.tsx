@@ -1,18 +1,29 @@
 import { useState, useEffect } from 'react';
 import { School, Plus, Search, Trash2, Edit3, X, Save, RefreshCw, Layers } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GlassCard, PremiumButton, SoftInput, Table, Thead, Tbody, Tr, Th, Td, Modal, PremiumSelect } from '../../components/ui';
+import { GlassCard, PremiumButton, SoftInput, Table, Thead, Tbody, Tr, Th, Td, Modal, PremiumSelect, DataExportImport } from '../../components/ui';
 import { useNotificationStore } from '../../stores/notificationStore';
 import * as masterService from '../../services/master.service';
+import { generateExcelTemplate, exportToExcel, parseExcel, type ExcelColumnConfig } from '../../utils/excelService';
+
+const KELAS_COLUMNS: ExcelColumnConfig[] = [
+  { key: 'jenjangName', header: 'Induk Jenjang', width: 25, type: 'text', required: true, example: 'Ibtida\'iyyah' },
+  { key: 'tingkatName', header: 'Tingkat / Kelas', width: 20, type: 'text', required: true, example: 'I' },
+  { key: 'bagian', header: 'Nama Bagian Kelas', width: 20, type: 'text', required: true, example: 'أ' },
+  { key: 'lokal', header: 'Lokasi / Gedung', width: 25, type: 'text', required: true, example: 'Gedung Utama Lt 1' },
+];
 
 interface KelasItem {
   id: string;
+  jenjangId: string;
   jenjangName: string;
+  tingkatId: string;
   tingkatName: string;
   bagian: string;
   lokal: string;
+  mustahiqId: string;
   mustahiqName: string;
-  munawwibNames: string[];
+  munawwibIds: string[];
 }
 
 interface JenjangItem {
@@ -22,6 +33,7 @@ interface JenjangItem {
 
 interface TingkatItem {
   id: string;
+  jenjangId: string;
   jenjangName: string;
   romanName: string;
 }
@@ -40,12 +52,12 @@ export const AdminKelasRombelPage = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<KelasItem | null>(null);
   
-  const [formJenjang, setFormJenjang] = useState('');
-  const [formTingkat, setFormTingkat] = useState('');
+  const [formJenjangId, setFormJenjangId] = useState('');
+  const [formTingkatId, setFormTingkatId] = useState('');
   const [formBagian, setFormBagian] = useState('');
   const [formLokal, setFormLokal] = useState('');
-  const [formMustahiq, setFormMustahiq] = useState('');
-  const [formMunawwibs, setFormMunawwibs] = useState<string[]>(['']);
+  const [formMustahiqId, setFormMustahiqId] = useState('');
+  const [formMunawwibIds, setFormMunawwibIds] = useState<string[]>(['']);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -61,19 +73,13 @@ export const AdminKelasRombelPage = () => {
       if (cRes.success) {
         const parsedKelas = cRes.data.map((c: any) => ({
           ...c,
-          munawwibNames: c.munawwibNames ? JSON.parse(c.munawwibNames) : []
+          munawwibIds: c.munawwibIds ? JSON.parse(c.munawwibIds) : []
         }));
         setClassList(parsedKelas);
       }
-      if (jRes.success) {
-        setJenjangList(jRes.data);
-      }
-      if (tRes.success) {
-        setTingkatList(tRes.data);
-      }
-      if (aRes.success) {
-        setAsatidzList(aRes.data);
-      }
+      if (jRes.success) setJenjangList(jRes.data);
+      if (tRes.success) setTingkatList(tRes.data);
+      if (aRes.success) setAsatidzList(aRes.data);
     } catch (err) {
       showToast('Gagal memuat data Kelas Rombel', 'error');
     } finally {
@@ -86,74 +92,78 @@ export const AdminKelasRombelPage = () => {
   }, []);
 
   useEffect(() => {
-    if (jenjangList.length > 0 && !formJenjang) {
-      setFormJenjang(jenjangList[0].name);
+    if (jenjangList.length > 0 && !formJenjangId) {
+      setFormJenjangId(jenjangList[0].id);
     }
   }, [jenjangList]);
 
   useEffect(() => {
-    const list = tingkatList.filter(t => t.jenjangName === formJenjang);
-    if (list.length > 0) {
-      if (!list.find(t => t.romanName === formTingkat)) {
-        setFormTingkat(list[0].romanName);
+    const filteredTingkat = tingkatList.filter(t => t.jenjangId === formJenjangId);
+    if (filteredTingkat.length > 0) {
+      if (!filteredTingkat.find(t => t.id === formTingkatId)) {
+        setFormTingkatId(filteredTingkat[0].id);
       }
     } else {
-      setFormTingkat('');
+      setFormTingkatId('');
     }
-  }, [formJenjang, tingkatList]);
+  }, [formJenjangId, tingkatList]);
 
   const openAddModal = () => {
     setEditingItem(null);
-    if (jenjangList.length > 0) setFormJenjang(jenjangList[0].name);
+    if (jenjangList.length > 0) setFormJenjangId(jenjangList[0].id);
     setFormBagian('');
     setFormLokal('');
-    setFormMustahiq('');
-    setFormMunawwibs(['']);
+    setFormMustahiqId('');
+    setFormMunawwibIds(['']);
     setModalOpen(true);
   };
 
   const openEditModal = (item: KelasItem) => {
     setEditingItem(item);
-    setFormJenjang(item.jenjangName);
-    setFormTingkat(item.tingkatName);
+    setFormJenjangId(item.jenjangId);
+    setFormTingkatId(item.tingkatId);
     setFormBagian(item.bagian);
-    setFormLokal(item.lokal);
-    setFormMustahiq(item.mustahiqName);
-    setFormMunawwibs(item.munawwibNames.length > 0 ? item.munawwibNames : ['']);
+    setFormLokal(item.lokal || '');
+    setFormMustahiqId(item.mustahiqId || '');
+    setFormMunawwibIds(item.munawwibIds && item.munawwibIds.length > 0 ? item.munawwibIds : ['']);
     setModalOpen(true);
   };
 
-  const handleMunawwibChange = (idx: number, value: string) => {
-    const newArr = [...formMunawwibs];
-    newArr[idx] = value;
-    setFormMunawwibs(newArr);
+  const getAsatidzName = (id: string) => {
+    const asatidz = asatidzList.find(a => a.id === id);
+    return asatidz ? asatidz.name : '-';
+  };
+
+  const handleMunawwibChange = (idx: number, val: string) => {
+    const newArr = [...formMunawwibIds];
+    newArr[idx] = val;
+    setFormMunawwibIds(newArr);
   };
 
   const addMunawwibField = () => {
-    setFormMunawwibs([...formMunawwibs, '']);
+    setFormMunawwibIds([...formMunawwibIds, '']);
   };
 
   const removeMunawwibField = (idx: number) => {
-    const newArr = [...formMunawwibs];
+    const newArr = [...formMunawwibIds];
     newArr.splice(idx, 1);
-    setFormMunawwibs(newArr.length > 0 ? newArr : ['']);
+    setFormMunawwibIds(newArr.length > 0 ? newArr : ['']);
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formJenjang || !formTingkat || !formBagian || !formLokal) {
-      showToast('Jenjang, Tingkat, Bagian, dan Lokal harus diisi', 'error');
+    if (!formTingkatId || !formBagian || !formLokal) {
+      showToast('Tingkat, Bagian, dan Lokal harus diisi', 'error');
       return;
     }
     
     setIsSubmitting(true);
     const payload = {
-      jenjangName: formJenjang,
-      tingkatName: formTingkat,
+      tingkatId: formTingkatId,
       bagian: formBagian,
       lokal: formLokal,
-      mustahiqName: formMustahiq,
-      munawwibNames: JSON.stringify(formMunawwibs.filter(m => m.trim() !== ''))
+      mustahiqId: formMustahiqId || null,
+      munawwibIds: JSON.stringify(formMunawwibIds.filter(id => id.trim() !== ''))
     };
 
     try {
@@ -176,7 +186,7 @@ export const AdminKelasRombelPage = () => {
   const handleDelete = (item: KelasItem) => {
     showConfirm(
       'Hapus Kelas Rombel',
-      `Apakah Anda yakin ingin menghapus Kelas ${item.tingkatName} ${item.bagian} (${item.lokal})?`,
+      `Apakah Anda yakin ingin menghapus Kelas ${item.tingkatName} ${item.bagian}?`,
       async () => {
         try {
           await masterService.deleteKelas(item.id);
@@ -187,6 +197,47 @@ export const AdminKelasRombelPage = () => {
         }
       }
     );
+  };
+
+  const handleDownloadTemplate = async () => {
+    await generateExcelTemplate(KELAS_COLUMNS, 'Template_Kelas_Mubtadiat.xlsx');
+  };
+
+  const handleExportData = async () => {
+    // Simplify export for now
+    await exportToExcel(classList, KELAS_COLUMNS, 'Data_Kelas_Mubtadiat.xlsx');
+  };
+
+  const handleImportData = async (file: File) => {
+    try {
+      const parsedData = await parseExcel(file);
+      if (parsedData.length === 0) throw new Error('Data kosong');
+      
+      let imported = 0;
+      for (const row of parsedData) {
+        if (row.tingkatName && row.bagian && row.lokal) {
+          const matchedTingkat = tingkatList.find(t => t.romanName === row.tingkatName && t.jenjangName === row.jenjangName);
+          if (!matchedTingkat) continue;
+
+          await masterService.createKelas({
+            tingkatId: matchedTingkat.id,
+            bagian: String(row.bagian),
+            lokal: String(row.lokal),
+            mustahiqId: null,
+            munawwibIds: JSON.stringify([])
+          });
+          imported++;
+        }
+      }
+      showToast(`${imported} data kelas berhasil diimport!`, 'success');
+      loadData();
+    } catch (err: any) {
+      showToast(err.message || 'Gagal mengimport data', 'error');
+    }
+  };
+
+  const getAsatidzName = (id: string) => {
+    return asatidzList.find(a => a.id === id)?.name || 'Unknown';
   };
 
   const filteredData = classList.filter(c => 
@@ -216,7 +267,7 @@ export const AdminKelasRombelPage = () => {
               <div>
                 <h1 className="text-2xl font-black text-slate-800 tracking-tight drop-shadow-sm">Master Kelas / Rombel</h1>
                 <p className="text-xs font-bold text-slate-500 mt-1 uppercase tracking-widest">
-                  Manajemen Rombongan Belajar & Mustahiq
+                  Manajemen Rombongan Belajar & Wali Kelas
                 </p>
               </div>
             </div>
@@ -251,16 +302,21 @@ export const AdminKelasRombelPage = () => {
             </motion.div>
           </div>
           
-          <div className="flex flex-col items-end gap-3 w-full md:w-auto">
-          <PremiumButton 
-            onClick={openAddModal} 
-            variant="primary" 
-            leftIcon={<Plus className="w-5 h-5" />}
-            className="w-full md:w-auto shadow-[0_4px_15px_rgba(79,70,229,0.3)] hover:shadow-[0_6px_25px_rgba(79,70,229,0.4)] transition-all"
-          >
-            Tambah Kelas/Rombel
-          </PremiumButton>
-        </div>
+          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end relative">
+            <DataExportImport 
+              onDownloadTemplate={handleDownloadTemplate}
+              onExportData={handleExportData}
+              onImportData={handleImportData}
+            />
+            <PremiumButton 
+              onClick={openAddModal} 
+              variant="primary" 
+              leftIcon={<Plus className="w-5 h-5" />}
+              className="w-full md:w-auto shadow-[0_4px_15px_rgba(79,70,229,0.3)] hover:shadow-[0_6px_25px_rgba(79,70,229,0.4)] transition-all"
+            >
+              Tambah Kelas/Rombel
+            </PremiumButton>
+          </div>
         </GlassCard>
       </motion.div>
 
@@ -325,12 +381,12 @@ export const AdminKelasRombelPage = () => {
                         </span>
                       </Td>
                       <Td>
-                        {item.munawwibNames && item.munawwibNames.length > 0 ? (
+                        {item.munawwibIds && item.munawwibIds.length > 0 ? (
                           <div className="flex flex-col gap-1">
-                            {item.munawwibNames.map((m, i) => (
+                            {item.munawwibIds.map((mId, i) => (
                               <span key={i} className="text-xs font-bold text-slate-500 flex items-center gap-1">
                                 <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                                {m}
+                                {getAsatidzName(mId)}
                               </span>
                             ))}
                           </div>
@@ -338,8 +394,9 @@ export const AdminKelasRombelPage = () => {
                           <span className="text-slate-400 italic text-xs">Kosong</span>
                         )}
                       </Td>
-                      <Td className="text-right space-x-2">
-                        <button
+                      <Td>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
                           onClick={() => openEditModal(item)}
                           className="p-2 rounded-xl text-blue-500 hover:bg-blue-50 hover:text-blue-600 transition-colors focus:outline-hidden"
                           title="Edit"
@@ -353,6 +410,7 @@ export const AdminKelasRombelPage = () => {
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
+                        </div>
                       </Td>
                     </motion.tr>
                   ))}
@@ -383,24 +441,24 @@ export const AdminKelasRombelPage = () => {
             <div>
               <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Jenjang</label>
               <PremiumSelect
-                value={formJenjang}
-                onChange={(e) => setFormJenjang(e.target.value)}
+                value={formJenjangId}
+                onChange={(e) => setFormJenjangId(e.target.value)}
                 className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-bold text-slate-700 focus:outline-hidden focus:border-emerald-500 transition-colors"
                 required
               >
-                {jenjangList.map(j => <option key={j.id} value={j.name}>{j.name}</option>)}
+                {jenjangList.map(j => <option key={j.id} value={j.id}>{j.name}</option>)}
               </PremiumSelect>
             </div>
             <div>
               <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Tingkat</label>
               <PremiumSelect
-                value={formTingkat}
-                onChange={(e) => setFormTingkat(e.target.value)}
+                value={formTingkatId}
+                onChange={(e) => setFormTingkatId(e.target.value)}
                 className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-bold text-slate-700 focus:outline-hidden focus:border-emerald-500 transition-colors"
                 required
               >
-                {tingkatList.filter(t => t.jenjangName === formJenjang).map(t => (
-                  <option key={t.id} value={t.romanName}>{t.romanName}</option>
+                {tingkatList.filter(t => t.jenjangId === formJenjangId).map(t => (
+                  <option key={t.id} value={t.id}>{t.romanName}</option>
                 ))}
               </PremiumSelect>
             </div>
@@ -442,18 +500,18 @@ export const AdminKelasRombelPage = () => {
           <div>
             <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Mustahiq (Wali Kelas)</label>
             <PremiumSelect
-              value={formMustahiq}
-              onChange={(e: any) => setFormMustahiq(e.target.value)}
-              disabled={asatidzList.filter(a => a.role === 'Mustahiq').length === 0}
+              value={formMustahiqId}
+              onChange={(e: any) => setFormMustahiqId(e.target.value)}
+              disabled={asatidzList.filter(a => a.role === '4').length === 0}
               className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-bold text-slate-700 focus:outline-hidden focus:border-emerald-500 transition-colors"
             >
-              {asatidzList.filter(a => a.role === 'Mustahiq').length === 0 ? (
+              {asatidzList.filter(a => a.role === '4').length === 0 ? (
                 <option value="">Buat Master Mustahiq terlebih dahulu</option>
               ) : (
                 <option value="">-- Pilih Mustahiq --</option>
               )}
-              {asatidzList.filter(a => a.role === 'Mustahiq').map(a => (
-                <option key={a.id} value={a.name}>{a.name}</option>
+              {asatidzList.filter(a => a.role === '4').map(a => (
+                <option key={a.id} value={a.id}>{a.name}</option>
               ))}
             </PremiumSelect>
           </div>
@@ -470,16 +528,16 @@ export const AdminKelasRombelPage = () => {
                 <PremiumSelect
                   value={munawwib}
                   onChange={(e: any) => handleMunawwibChange(idx, e.target.value)}
-                  disabled={asatidzList.filter(a => a.role === 'Munawwib').length === 0}
+                  disabled={asatidzList.filter(a => a.role === '5').length === 0}
                   className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-bold text-slate-700 focus:outline-hidden focus:border-emerald-500 transition-colors"
                 >
-                  {asatidzList.filter(a => a.role === 'Munawwib').length === 0 ? (
+                  {asatidzList.filter(a => a.role === '5').length === 0 ? (
                     <option value="">Buat Master Munawwib terlebih dahulu</option>
                   ) : (
                     <option value="">-- Pilih Munawwib --</option>
                   )}
-                  {asatidzList.filter(a => a.role === 'Munawwib').map(a => (
-                    <option key={a.id} value={a.name}>{a.name}</option>
+                  {asatidzList.filter(a => a.role === '5').map(a => (
+                    <option key={a.id} value={a.id}>{a.name}</option>
                   ))}
                 </PremiumSelect>
                 {formMunawwibs.length > 1 && (

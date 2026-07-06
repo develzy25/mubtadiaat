@@ -190,7 +190,7 @@ export const AdminJadwalPage = () => {
             >
               {classList.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.name}
+                  {c.tingkatName} {c.bagian} {c.lokal ? `- ${c.lokal}` : ''}
                 </option>
               ))}
             </PremiumSelect>

@@ -26,7 +26,7 @@ export interface SantriAdmin {
   kamarName?: string;
   blokName?: string;
   customFields: string | null; // JSON string
-  status: 'ACTIVE' | 'ALUMNI' | 'BOYONG' | 'CUTI';
+  status: 'ACTIVE' | 'ALUMNI' | 'BOYONG' | 'CUTI' | 'KHIDMAH';
   createdAt?: string;
   updatedAt?: string;
 }

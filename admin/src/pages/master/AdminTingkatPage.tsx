@@ -1,17 +1,23 @@
 import { useState, useEffect } from 'react';
 import { GraduationCap, Plus, Search, Trash2, Edit3, X, Save, RefreshCw, Layers } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GlassCard, PremiumButton, SoftInput, Table, Thead, Tbody, Tr, Th, Td, Modal, PremiumSelect } from '../../components/ui';
+import { GlassCard, PremiumButton, SoftInput, Table, Thead, Tbody, Tr, Th, Td, Modal, PremiumSelect, DataExportImport } from '../../components/ui';
 import { useNotificationStore } from '../../stores/notificationStore';
 import * as masterService from '../../services/master.service';
+import { generateExcelTemplate, exportToExcel, parseExcel, type ExcelColumnConfig } from '../../utils/excelService';
 
-
+const TINGKAT_COLUMNS: ExcelColumnConfig[] = [
+  { key: 'jenjangName', header: 'Induk Jenjang', width: 25, type: 'text', required: true, example: 'Ibtida\'iyyah' },
+  { key: 'romanName', header: 'Tingkat (Roman)', width: 20, type: 'text', required: true, example: 'I, II, III' },
+  { key: 'targetNadzom', header: 'Target Nadzom', width: 30, type: 'text', required: false, example: 'Aqidatul Awam' },
+  { key: 'targetBait', header: 'Target Bait (Angka)', width: 20, type: 'number', required: false, example: '100' },
+];
 
 interface TingkatItem {
   id: string;
+  jenjangId: string;
   jenjangName: string;
   romanName: string;
-  mufatishName: string;
   targetNadzom: string;
   targetBait: number;
   hasPraktek: boolean;
@@ -35,9 +41,8 @@ export const AdminTingkatPage = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<TingkatItem | null>(null);
   
-  const [formJenjang, setFormJenjang] = useState('');
+  const [formJenjangId, setFormJenjangId] = useState('');
   const [formRoman, setFormRoman] = useState('I');
-  const [formMufatish, setFormMufatish] = useState('');
   const [formTargetNadzom, setFormTargetNadzom] = useState('');
   const [formTargetBait, setFormTargetBait] = useState(0);
   const [formHasPraktek, setFormHasPraktek] = useState(false);
@@ -61,8 +66,8 @@ export const AdminTingkatPage = () => {
       }
       if (jRes.success) {
         setJenjangList(jRes.data);
-        if (jRes.data.length > 0 && !formJenjang) {
-          setFormJenjang(jRes.data[0].name);
+        if (jRes.data.length > 0 && !formJenjangId) {
+          setFormJenjangId(jRes.data[0].id);
         }
       }
     } catch (err) {
@@ -76,6 +81,8 @@ export const AdminTingkatPage = () => {
     loadData();
   }, []);
 
+  const getJenjangNameById = (id: string) => jenjangList.find(j => j.id === id)?.name || '';
+
   // Rule exception checks
   const isIdadiyah = (levelName: string) => {
     return levelName.toLowerCase().includes("i'dadiyah") || levelName.toLowerCase() === 'idadiyah';
@@ -88,8 +95,9 @@ export const AdminTingkatPage = () => {
   };
 
   useEffect(() => {
-    if (formJenjang && formRoman) {
-      if (isFinalTingkat(formJenjang, formRoman)) {
+    const selectedJenjangName = getJenjangNameById(formJenjangId);
+    if (selectedJenjangName && formRoman) {
+      if (isFinalTingkat(selectedJenjangName, formRoman)) {
         setFormHasPraktek(true);
         if (formPraktekSubjects.length === 0 || (formPraktekSubjects.length === 1 && formPraktekSubjects[0] === '')) {
           setFormPraktekSubjects(['Ujian Praktek Al-Qur\'an', 'Ujian Praktek Ibadah']);
@@ -99,13 +107,12 @@ export const AdminTingkatPage = () => {
         setFormPraktekSubjects(['']);
       }
     }
-  }, [formJenjang, formRoman]);
+  }, [formJenjangId, formRoman]);
 
   const openAddModal = () => {
     setEditingItem(null);
-    if (jenjangList.length > 0) setFormJenjang(jenjangList[0].name);
+    if (jenjangList.length > 0) setFormJenjangId(jenjangList[0].id);
     setFormRoman('I');
-    setFormMufatish('');
     setFormTargetNadzom('');
     setFormTargetBait(0);
     setModalOpen(true);
@@ -113,11 +120,10 @@ export const AdminTingkatPage = () => {
 
   const openEditModal = (item: TingkatItem) => {
     setEditingItem(item);
-    setFormJenjang(item.jenjangName);
+    setFormJenjangId(item.jenjangId);
     setFormRoman(item.romanName);
-    setFormMufatish(item.mufatishName);
-    setFormTargetNadzom(item.targetNadzom);
-    setFormTargetBait(item.targetBait);
+    setFormTargetNadzom(item.targetNadzom || '');
+    setFormTargetBait(item.targetBait || 0);
     setFormHasPraktek(item.hasPraktek);
     setFormPraktekSubjects(item.praktekSubjects.length > 0 ? item.praktekSubjects : ['']);
     setModalOpen(true);
@@ -141,19 +147,19 @@ export const AdminTingkatPage = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formJenjang || !formRoman) {
+    if (!formJenjangId || !formRoman) {
       showToast('Jenjang dan Nama Tingkat harus diisi', 'error');
       return;
     }
     
     setIsSubmitting(true);
     const payload = {
-      jenjangName: formJenjang,
-      romanName: formRoman,
-      mufatishName: formMufatish,
+      jenjangId: formJenjangId,
+      name: formRoman,
       targetNadzom: formTargetNadzom,
       targetBait: formTargetBait,
       hasPraktek: formHasPraktek,
+      // Optional: if backend accepts praktek subjects for tingkat, else it may ignore
       praktekSubjects: JSON.stringify(formPraktekSubjects.filter(s => s.trim() !== ''))
     };
 
@@ -190,10 +196,52 @@ export const AdminTingkatPage = () => {
     );
   };
 
+  const handleDownloadTemplate = async () => {
+    await generateExcelTemplate(TINGKAT_COLUMNS, 'Template_Tingkat_Mubtadiat.xlsx');
+  };
+
+  const handleExportData = async () => {
+    await exportToExcel(tingkatList, TINGKAT_COLUMNS, 'Data_Tingkat_Mubtadiat.xlsx');
+  };
+
+  const handleImportData = async (file: File) => {
+    try {
+      const parsedData = await parseExcel(file);
+      if (parsedData.length === 0) throw new Error('Data kosong');
+      
+      let imported = 0;
+      for (const row of parsedData) {
+        if (row.jenjangName && row.romanName) {
+          const jenjangName = String(row.jenjangName).trim();
+          const romanName = String(row.romanName).trim();
+          
+          const jenjangMatch = jenjangList.find(j => j.name.toLowerCase() === jenjangName.toLowerCase());
+          if (!jenjangMatch) continue; // Skip if jenjang doesn't exist
+
+          const hasPraktek = isFinalTingkat(jenjangName, romanName);
+          const praktekSubjects = hasPraktek ? ['Ujian Praktek Al-Qur\'an', 'Ujian Praktek Ibadah'] : [];
+
+          await masterService.createTingkat({
+            jenjangId: jenjangMatch.id,
+            name: romanName,
+            targetNadzom: row.targetNadzom ? String(row.targetNadzom) : '',
+            targetBait: row.targetBait ? Number(row.targetBait) : 0,
+            hasPraktek,
+            praktekSubjects: JSON.stringify(praktekSubjects)
+          });
+          imported++;
+        }
+      }
+      showToast(`${imported} data tingkat berhasil diimport!`, 'success');
+      loadData();
+    } catch (err: any) {
+      showToast(err.message || 'Gagal mengimport data', 'error');
+    }
+  };
+
   const filteredData = tingkatList.filter(t => 
     (t.jenjangName || '').toLowerCase().includes(search.toLowerCase()) ||
     (t.romanName || '').toLowerCase().includes(search.toLowerCase()) ||
-    (t.mufatishName || '').toLowerCase().includes(search.toLowerCase()) ||
     (t.targetNadzom || '').toLowerCase().includes(search.toLowerCase())
   );
 
@@ -251,16 +299,21 @@ export const AdminTingkatPage = () => {
             </motion.div>
           </div>
           
-          <div className="flex flex-col items-end gap-3 w-full md:w-auto">
-          <PremiumButton 
-            onClick={openAddModal} 
-            variant="primary" 
-            leftIcon={<Plus className="w-5 h-5" />}
-            className="w-full md:w-auto shadow-[0_4px_15px_rgba(79,70,229,0.3)] hover:shadow-[0_6px_25px_rgba(79,70,229,0.4)] transition-all"
-          >
-            Tambah Tingkat
-          </PremiumButton>
-        </div>
+          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end relative">
+            <DataExportImport 
+              onDownloadTemplate={handleDownloadTemplate}
+              onExportData={handleExportData}
+              onImportData={handleImportData}
+            />
+            <PremiumButton 
+              onClick={openAddModal} 
+              variant="primary" 
+              leftIcon={<Plus className="w-5 h-5" />}
+              className="w-full md:w-auto shadow-[0_4px_15px_rgba(79,70,229,0.3)] hover:shadow-[0_6px_25px_rgba(79,70,229,0.4)] transition-all"
+            >
+              Tambah Tingkat
+            </PremiumButton>
+          </div>
         </GlassCard>
       </motion.div>
 
@@ -282,7 +335,6 @@ export const AdminTingkatPage = () => {
                 <Tr className="bg-slate-50/50">
                   <Th className="font-black text-slate-500 uppercase tracking-widest text-[10px]">Tingkat (Roman)</Th>
                   <Th className="font-black text-slate-500 uppercase tracking-widest text-[10px]">Induk Jenjang</Th>
-                  <Th className="font-black text-slate-500 uppercase tracking-widest text-[10px]">Mufatish / Pengawas</Th>
                   <Th className="font-black text-slate-500 uppercase tracking-widest text-[10px]">Target Kurikulum</Th>
                   <Th className="font-black text-slate-500 uppercase tracking-widest text-[10px] text-right">Aksi</Th>
                 </Tr>
@@ -313,11 +365,6 @@ export const AdminTingkatPage = () => {
                         </span>
                       </Td>
                       <Td>
-                        <span className="font-bold text-slate-600 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm inline-block group-hover:border-purple-200 transition-colors">
-                          {item.mufatishName || 'Belum Diatur'}
-                        </span>
-                      </Td>
-                      <Td>
                         {item.targetNadzom ? (
                           <div>
                             <div className="font-black text-slate-800 text-xs bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200 inline-block">
@@ -338,8 +385,9 @@ export const AdminTingkatPage = () => {
                           </div>
                         )}
                       </Td>
-                      <Td className="text-right space-x-2">
-                        <button
+                      <Td>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
                           onClick={() => openEditModal(item)}
                           className="p-2 rounded-xl text-blue-500 hover:bg-blue-50 hover:text-blue-600 transition-colors focus:outline-hidden"
                           title="Edit"
@@ -353,6 +401,7 @@ export const AdminTingkatPage = () => {
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
+                        </div>
                       </Td>
                     </motion.tr>
                   ))}
@@ -360,7 +409,7 @@ export const AdminTingkatPage = () => {
                 
                 {filteredData.length === 0 && (
                   <Tr>
-                    <Td colSpan={5} className="text-center py-24 text-slate-400">
+                    <Td colSpan={4} className="text-center py-24 text-slate-400">
                       <GraduationCap className="w-12 h-12 mx-auto mb-4 opacity-20" />
                       <p className="font-bold text-sm">Tidak ada data tingkat ditemukan</p>
                     </Td>
@@ -383,12 +432,13 @@ export const AdminTingkatPage = () => {
             <div>
               <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Jenjang</label>
               <PremiumSelect
-                value={formJenjang}
-                onChange={(e) => setFormJenjang(e.target.value)}
+                value={formJenjangId}
+                onChange={(e) => setFormJenjangId(e.target.value)}
                 className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-bold text-slate-700 focus:outline-hidden focus:border-purple-500 transition-colors"
                 required
               >
-                {jenjangList.map(j => <option key={j.id} value={j.name}>{j.name}</option>)}
+                <option value="">-- Pilih Jenjang --</option>
+                {jenjangList.map(j => <option key={j.id} value={j.id}>{j.name}</option>)}
               </PremiumSelect>
             </div>
             <div>
@@ -409,15 +459,6 @@ export const AdminTingkatPage = () => {
             </div>
           </div>
           
-          <div>
-            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Mufatish (Pengawas Tingkat)</label>
-            <SoftInput
-              value={formMufatish}
-              onChange={(e) => setFormMufatish(e.target.value)}
-              placeholder="e.g. Ustadz Abdullah"
-            />
-          </div>
-
           <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4 mt-2">
             <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest">Kurikulum Nadzom</h3>
             <div className="grid grid-cols-2 gap-4">

@@ -270,7 +270,7 @@ export const SantriTab = () => {
   };
 
   const handleStatusChange = (santri: SantriAdmin, newStatus: string) => {
-    if (newStatus !== 'ACTIVE' && newStatus !== 'ALUMNI' && newStatus !== 'BOYONG' && newStatus !== 'CUTI') return;
+    if (newStatus !== 'ACTIVE' && newStatus !== 'ALUMNI' && newStatus !== 'BOYONG' && newStatus !== 'CUTI' && newStatus !== 'KHIDMAH') return;
     
     showConfirm(
       'Ubah Status Santri',
@@ -501,12 +501,12 @@ export const SantriTab = () => {
                   </Td>
                   <Td>
                     <span className="px-2 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-[10px] font-bold">
-                      {kelasList.find(k => k.id === santri.kelasId) ? `${kelasList.find(k => k.id === santri.kelasId).jenjangName} ${kelasList.find(k => k.id === santri.kelasId).tingkatName} ${kelasList.find(k => k.id === santri.kelasId).bagian}` : (santri.kelasId || '-')}
+                      {santri.jenjangName ? `${santri.jenjangName} ${santri.tingkatName} ${santri.kelasBagian || ''}` : '-'}
                     </span>
                   </Td>
                   <Td>
                     <span className="px-2 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold">
-                      {kamarList.find(k => k.id === santri.kamarId) ? `${kamarList.find(k => k.id === santri.kamarId).blok} - ${kamarList.find(k => k.id === santri.kamarId).name}` : (santri.kamarId || '-')}
+                      {santri.kamarName ? `Blok ${santri.blokName} - ${santri.kamarName}` : '-'}
                     </span>
                   </Td>
                   <Td>
@@ -514,32 +514,40 @@ export const SantriTab = () => {
                       Aktif
                     </span>
                   </Td>
-                  <Td className="text-right space-x-1.5">
-                    <PremiumSelect
-                      value=""
-                      onChange={(e: any) => { if(e.target.value) handleStatusChange(santri, e.target.value); }}
-                      className="inline-block w-28 bg-white border border-slate-200 px-2 py-1.5 text-[9px] text-slate-600"
-                    >
-                      <option value="">Mutasi...</option>
-                      <option value="ALUMNI">Jadikan Alumni</option>
-                      <option value="CUTI">Mutasi Cuti</option>
-                      <option value="BOYONG">Mutasi Boyong</option>
-                    </PremiumSelect>
-                    
-                    <button
-                      onClick={() => openEditModal(santri)}
-                      className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 transition-colors"
-                      title="Edit"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(santri.id)}
-                      className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-50 transition-colors"
-                      title="Hapus"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                  <Td>
+                    <div className="flex items-center justify-end gap-2">
+                      <select
+                        value=""
+                        onChange={(e: any) => { 
+                          if(e.target.value) {
+                            handleStatusChange(santri, e.target.value);
+                            e.target.value = ""; // Reset visually
+                          }
+                        }}
+                        className="bg-white border border-slate-200 text-[10px] font-bold rounded-lg px-2 py-1.5 text-slate-700 outline-hidden hover:border-blue-400 hover:bg-blue-50 transition-colors w-28 cursor-pointer shadow-sm"
+                      >
+                        <option value="">Mutasi...</option>
+                        <option value="ALUMNI">Jadikan Alumni</option>
+                        <option value="KHIDMAH">Masa Khidmah</option>
+                        <option value="CUTI">Mutasi Cuti</option>
+                        <option value="BOYONG">Mutasi Boyong</option>
+                      </select>
+                      
+                      <button
+                        onClick={() => openEditModal(santri)}
+                        className="p-1.5 rounded-lg text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors border border-blue-100"
+                        title="Edit"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(santri.id)}
+                        className="p-1.5 rounded-lg text-rose-600 bg-rose-50 hover:bg-rose-100 transition-colors border border-rose-100"
+                        title="Hapus"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </Td>
                 </Tr>
               ))}

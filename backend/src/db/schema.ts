@@ -69,6 +69,7 @@ export const asatidz = sqliteTable('asatidz', {
   name: text('name').notNull(),
   nip: text('nip'), // Optional ID pengurus
   phone: text('phone'), // WhatsApp
+  role: text('role'), // 1=Admin, 2=Mundzir, 3=Mufatish, 4=Mustahiq, 5=Munawwib
   status: text('status').notNull().default('ACTIVE'), // ACTIVE, INACTIVE
   ...timestampFields,
 });
@@ -151,7 +152,7 @@ export const santri = sqliteTable('santri', {
   tahunKeluar: text('tahun_keluar'),
   kelasId: text('kelas_id').references(() => kelas.id, { onDelete: 'set null' }),
   kamarId: text('kamar_id').references(() => kamar.id, { onDelete: 'set null' }),
-  status: text('status').notNull().default('ACTIVE'), // ACTIVE, ALUMNI, BOYONG, CUTI
+  status: text('status').notNull().default('ACTIVE'), // ACTIVE, ALUMNI, BOYONG, CUTI, KHIDMAH
   customFields: text('custom_fields'), // JSON metadata
   ...timestampFields,
 });

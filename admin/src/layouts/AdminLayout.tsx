@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router';
+import { Outlet, Link, useLocation, useNavigate, useOutlet } from 'react-router';
 import { 
   LayoutDashboard, 
   Users2, 
@@ -31,6 +31,7 @@ export const AdminLayout = () => {
   const { data: sessionData } = useSession();
   const location = useLocation();
   const navigate = useNavigate();
+  const outlet = useOutlet();
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -367,7 +368,7 @@ export const AdminLayout = () => {
               transition={{ duration: 0.3, type: "spring", stiffness: 200, damping: 20 }}
               className="h-full"
             >
-              <Outlet />
+              {outlet}
             </motion.div>
           </AnimatePresence>
         </main>

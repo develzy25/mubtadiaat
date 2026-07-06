@@ -16,19 +16,22 @@ export default function LoginScreen() {
     setIsLoading(true);
     
     try {
-      // Simulate real API for better-auth
-      // const res = await api.post('/api/auth/sign-in/email', { email: username, password });
+      // Use real API for better-auth
+      const res = await api.post('/auth/sign-in/username', { username, password });
       
-      // Since better-auth requires specific client setup, we will mock the role detection for now
-      // assuming the API returns role in user object
-      const simulatedRole = username.includes('admin') ? 1 : username.includes('mundzir') ? 2 : username.includes('mufatish') ? 3 : 4;
+      const session = res.data?.session;
+      const user = res.data?.user;
+
+      if (!session || !user) {
+        throw new Error('Invalid credentials');
+      }
       
-      // Save simulated token
-      await setAuthToken('dummy_token_123');
+      // Save real token
+      await setAuthToken(session.token);
       
-      if (simulatedRole === 4) {
+      if (user.role === 4) {
         router.replace('/(roles)/mustahiq');
-      } else if (simulatedRole === 2 || simulatedRole === 3) {
+      } else if (user.role === 2 || user.role === 3) {
         router.replace('/(roles)/monitoring');
       } else {
         // Admin

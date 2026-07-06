@@ -4,10 +4,12 @@ import {
   X, 
   History,
   RotateCcw,
-  GraduationCap
+  GraduationCap,
+  HeartHandshake
 } from 'lucide-react';
 import { fetchSantri, updateSantri } from '../../services/admin.service';
 import type { SantriAdmin } from '../../services/admin.service';
+import * as masterService from '../../services/master.service';
 import { GlassCard, 
   PremiumButton, 
   SoftInput,
@@ -22,10 +24,12 @@ import { useNotificationStore } from '../../stores/notificationStore';
 export const AlumniTab = () => {
   const { showToast, showConfirm } = useNotificationStore();
   const [alumniList, setAlumniList] = useState<SantriAdmin[]>([]);
+  const [kelasList, setKelasList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [yearFilter, setYearFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'ALUMNI' | 'CUTI' | 'BOYONG'>('ALUMNI');
+  const [classFilter, setClassFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'ALUMNI' | 'CUTI' | 'BOYONG' | 'KHIDMAH'>('ALUMNI');
 
   const loadAlumniData = async () => {
     setLoading(true);
@@ -39,7 +43,14 @@ export const AlumniTab = () => {
         if (yearFilter) {
           data = data.filter(s => s.tahunKeluar === yearFilter);
         }
+        if (classFilter) {
+          data = data.filter(s => s.kelasId === classFilter);
+        }
         setAlumniList(data);
+      }
+      const cRes = await masterService.fetchKelas();
+      if (cRes.success) {
+        setKelasList(cRes.data);
       }
     } catch (err) {
       console.error(err);
@@ -50,7 +61,7 @@ export const AlumniTab = () => {
 
   useEffect(() => {
     loadAlumniData();
-  }, [statusFilter, yearFilter]);
+  }, [statusFilter, yearFilter, classFilter]);
 
   const handleReactivate = (santri: SantriAdmin) => {
     showConfirm(
@@ -86,7 +97,7 @@ export const AlumniTab = () => {
       {/* Tabs */}
       <div className="flex items-center gap-2 border-b border-slate-200">
         <button
-          onClick={() => { setStatusFilter('ALUMNI'); setYearFilter(''); }}
+          onClick={() => { setStatusFilter('ALUMNI'); setYearFilter(''); setClassFilter(''); }}
           className={`px-6 py-3 font-bold text-sm transition-all border-b-2 flex items-center gap-2 ${
             statusFilter === 'ALUMNI' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
           }`}
@@ -95,7 +106,7 @@ export const AlumniTab = () => {
           Alumni (Sudah Lulus)
         </button>
         <button
-          onClick={() => { setStatusFilter('CUTI'); setYearFilter(''); }}
+          onClick={() => { setStatusFilter('CUTI'); setYearFilter(''); setClassFilter(''); }}
           className={`px-6 py-3 font-bold text-sm transition-all border-b-2 flex items-center gap-2 ${
             statusFilter === 'CUTI' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
           }`}
@@ -104,13 +115,22 @@ export const AlumniTab = () => {
           Masa Cuti
         </button>
         <button
-          onClick={() => { setStatusFilter('BOYONG'); setYearFilter(''); }}
+          onClick={() => { setStatusFilter('BOYONG'); setYearFilter(''); setClassFilter(''); }}
           className={`px-6 py-3 font-bold text-sm transition-all border-b-2 flex items-center gap-2 ${
             statusFilter === 'BOYONG' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
           }`}
         >
           <X className="w-4 h-4" />
           Boyong (Keluar)
+        </button>
+        <button
+          onClick={() => { setStatusFilter('KHIDMAH'); setYearFilter(''); setClassFilter(''); }}
+          className={`px-6 py-3 font-bold text-sm transition-all border-b-2 flex items-center gap-2 ${
+            statusFilter === 'KHIDMAH' ? 'border-blue-600 text-blue-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+          }`}
+        >
+          <HeartHandshake className="w-4 h-4" />
+          Masa Khidmah
         </button>
       </div>
 
@@ -136,13 +156,24 @@ export const AlumniTab = () => {
 
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
           <PremiumSelect
+            value={classFilter}
+            onChange={(e) => setClassFilter(e.target.value)}
+            className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-hidden focus:border-blue-500"
+          >
+            <option value="">Semua Kelas</option>
+            {kelasList.map(c => (
+              <option key={c.id} value={c.id}>{c.jenjangName} - {c.tingkatName} {c.bagian}</option>
+            ))}
+          </PremiumSelect>
+
+          <PremiumSelect
             value={yearFilter}
             onChange={(e) => setYearFilter(e.target.value)}
             className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 outline-hidden focus:border-blue-500"
           >
-            <option value="">Semua Tahun Keluar</option>
+            <option value="">Semua Tahun</option>
             {exitYears.map(year => (
-              <option key={year} value={year}>Tahun Keluar: {year}</option>
+              <option key={year} value={year}>Tahun: {year}</option>
             ))}
           </PremiumSelect>
 
@@ -165,7 +196,7 @@ export const AlumniTab = () => {
               <Tr>
                 <Th>No. Stambuk / NIK</Th>
                 <Th>Nama Lengkap</Th>
-                <Th>Tahun Keluar</Th>
+                <Th>Tahun Keluar / Khidmah</Th>
                 <Th>Kelas Terakhir</Th>
                 <Th>Status Arsip</Th>
                 <Th className="text-right">Aksi</Th>
@@ -189,27 +220,23 @@ export const AlumniTab = () => {
                     </div>
                   </Td>
                   <Td>
-                    {(() => {
-                      const parts = (santri.kelasId || '').split('|');
-                      if (parts.length >= 3) {
-                        const cleanPart2 = parts[2].replace(/bagian\s*/i, '').trim();
-                        return cleanPart2 ? `${parts[0]} ${cleanPart2} (Tk. ${parts[1]})` : `${parts[0]} (Tk. ${parts[1]})`;
-                      }
-                      return santri.kelasId || '-';
-                    })()}
+                    {santri.jenjangName ? `${santri.jenjangName} ${santri.tingkatName} ${santri.kelasBagian || ''}` : '-'}
                   </Td>
                   <Td>
                     <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${
                       santri.status === 'ALUMNI'
                         ? 'bg-emerald-500/10 text-emerald-600'
                         : santri.status === 'BOYONG' 
-                        ? 'bg-rose-500/10 text-rose-600' 
+                        ? 'bg-rose-500/10 text-rose-600'
+                        : santri.status === 'KHIDMAH'
+                        ? 'bg-indigo-500/10 text-indigo-600'
                         : 'bg-amber-500/10 text-amber-600'
                     }`}>
-                      {santri.status === 'ALUMNI' ? 'Alumni' : santri.status === 'BOYONG' ? 'Boyong' : 'Cuti'}
+                      {santri.status === 'ALUMNI' ? 'Alumni' : santri.status === 'BOYONG' ? 'Boyong' : santri.status === 'KHIDMAH' ? 'Khidmah' : 'Cuti'}
                     </span>
                   </Td>
-                  <Td className="text-right">
+                  <Td>
+                    <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => handleReactivate(santri)}
                         title="Re-aktifkan kembali sebagai santri aktif"
@@ -218,6 +245,7 @@ export const AlumniTab = () => {
                         <RotateCcw className="w-3.5 h-3.5" />
                         Re-aktifkan
                       </button>
+                    </div>
                   </Td>
                 </Tr>
               ))}

@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, SafeAreaView, Alert } from 'r
 import { Save, Calendar, CheckCircle, ArrowLeft } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { db, offlineQueue } from '../../src/lib/db';
-
+import { api } from '../../src/services/api';
 export default function AttendanceScreen() {
   const router = useRouter();
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
@@ -20,8 +20,13 @@ export default function AttendanceScreen() {
     
     // Attempt API Request, fallback to SQLite
     try {
-      // Simulate network failure
-      throw new Error("Network offline");
+      // Real API sync
+      await api.post('/santri/attendance/sync', { month: selectedMonth, data: dummySantri });
+      Alert.alert(
+        "Berhasil", 
+        "Data absensi telah berhasil disimpan.",
+        [{ text: "OK", onPress: () => router.back() }]
+      );
     } catch (e) {
       // Offline fallback: Save to SQLite
       await db.insert(offlineQueue).values({

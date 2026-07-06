@@ -1,44 +1,48 @@
 import { useState, useEffect } from 'react';
 import { Layers, Plus, Search, Trash2, Edit3, X, Save, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GlassCard, PremiumButton, SoftInput, Table, Thead, Tbody, Tr, Th, Td, Modal, DataExportImport } from '../../components/ui';
+import { GlassCard, PremiumButton, SoftInput, Table, Thead, Tbody, Tr, Th, Td, Modal, DataExportImport, PremiumSelect } from '../../components/ui';
 import { useNotificationStore } from '../../stores/notificationStore';
 import * as masterService from '../../services/master.service';
+import { fetchAsatidz, type AsatidzItem } from '../../services/master.service';
 import { generateExcelTemplate, exportToExcel, parseExcel, type ExcelColumnConfig } from '../../utils/excelService';
 
 const JENJANG_COLUMNS: ExcelColumnConfig[] = [
   { key: 'name', header: 'Nama Jenjang', width: 30, type: 'text', required: true, example: 'I\'dadiyah, Ibtida\'iyyah, dll' },
-  { key: 'mundzirName', header: 'Nama Mundzir', width: 30, type: 'text', required: true, example: 'Ust. Haris' },
+  { key: 'mufatishName', header: 'Nama Mufatish/Kepala', width: 30, type: 'text', required: true, example: 'Ust. Haris' },
 ];
-/* deduplicated */
 
 interface JenjangItem {
   id: string;
   name: string;
-  mundzirName: string;
+  mufatishId: string;
+  mufatishName: string;
 }
 
 export const AdminJenjangPage = () => {
   const { showToast, showConfirm } = useNotificationStore();
   const [jenjangList, setJenjangList] = useState<JenjangItem[]>([]);
+  const [asatidzList, setAsatidzList] = useState<AsatidzItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<JenjangItem | null>(null);
   const [formName, setFormName] = useState('');
-  const [formMundzir, setFormMundzir] = useState('');
+  const [formMufatishId, setFormMufatishId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const res = await masterService.fetchJenjang();
-      if (res.success) {
-        setJenjangList(res.data);
-      }
+      const [res, astRes] = await Promise.all([
+        masterService.fetchJenjang(),
+        fetchAsatidz()
+      ]);
+      if (res.success) setJenjangList(res.data);
+      if (astRes.success) setAsatidzList(astRes.data);
     } catch (err) {
-      showToast('Gagal memuat data Jenjang', 'error');
+      showToast('Gagal memuat data', 'error');
     } finally {
       setLoading(false);
     }
@@ -51,31 +55,31 @@ export const AdminJenjangPage = () => {
   const openAddModal = () => {
     setEditingItem(null);
     setFormName('');
-    setFormMundzir('');
+    setFormMufatishId('');
     setModalOpen(true);
   };
 
   const openEditModal = (item: JenjangItem) => {
     setEditingItem(item);
     setFormName(item.name);
-    setFormMundzir(item.mundzirName);
+    setFormMufatishId(item.mufatishId || '');
     setModalOpen(true);
   };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formName.trim() || !formMundzir.trim()) {
-      showToast('Nama Jenjang dan Mundzir harus diisi', 'error');
+    if (!formName.trim() || !formMufatishId) {
+      showToast('Nama Jenjang dan Mufatish/Kepala harus diisi', 'error');
       return;
     }
     
     setIsSubmitting(true);
     try {
       if (editingItem) {
-        await masterService.updateJenjang(editingItem.id, { name: formName, mundzirName: formMundzir });
+        await masterService.updateJenjang(editingItem.id, { name: formName, mufatishId: formMufatishId });
         showToast('Berhasil memperbarui data jenjang', 'success');
       } else {
-        await masterService.createJenjang({ name: formName, mundzirName: formMundzir });
+        await masterService.createJenjang({ name: formName, mufatishId: formMufatishId });
         showToast('Berhasil menambahkan jenjang baru', 'success');
       }
       setModalOpen(false);
@@ -102,10 +106,11 @@ export const AdminJenjangPage = () => {
       
       let imported = 0;
       for (const row of parsedData) {
-        if (row.name && row.mundzirName) {
+        if (row.name && row.mufatishName) {
+          const mufatish = asatidzList.find(a => a.name.toLowerCase() === String(row.mufatishName).toLowerCase());
           await masterService.createJenjang({
             name: row.name,
-            mundzirName: row.mundzirName
+            mufatishId: mufatish?.id || null
           });
           imported++;
         }
@@ -135,7 +140,7 @@ export const AdminJenjangPage = () => {
 
   const filteredData = jenjangList.filter(j => 
     (j.name || '').toLowerCase().includes(search.toLowerCase()) ||
-    (j.mundzirName || '').toLowerCase().includes(search.toLowerCase())
+    (j.mufatishName || '').toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -157,7 +162,7 @@ export const AdminJenjangPage = () => {
               <div>
                 <h1 className="text-2xl font-black text-slate-800 tracking-tight drop-shadow-sm">Master Jenjang</h1>
                 <p className="text-xs font-bold text-slate-500 mt-1 uppercase tracking-widest">
-                  Manajemen Tingkatan Utama & Mundzir
+                  Manajemen Tingkatan Utama & Kepala Jenjang
                 </p>
               </div>
             </div>
@@ -175,7 +180,7 @@ export const AdminJenjangPage = () => {
           <div className="relative w-full md:w-96">
             <motion.div whileFocus={{ scale: 1.02 }} className="relative">
               <SoftInput
-                placeholder="Cari jenjang atau mundzir..."
+                placeholder="Cari jenjang atau kepala jenjang..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 leftIcon={<Search className="w-5 h-5 text-indigo-400" />}
@@ -192,7 +197,12 @@ export const AdminJenjangPage = () => {
             </motion.div>
           </div>
           
-          <div className="flex flex-col items-end gap-3 w-full md:w-auto">
+          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end relative">
+            <DataExportImport 
+              onDownloadTemplate={handleDownloadTemplate}
+              onExportData={handleExportData}
+              onImportData={handleImportData}
+            />
             <PremiumButton 
               onClick={openAddModal} 
               variant="primary" 
@@ -201,11 +211,6 @@ export const AdminJenjangPage = () => {
             >
               Tambah Jenjang
             </PremiumButton>
-            <DataExportImport 
-              onDownloadTemplate={handleDownloadTemplate}
-              onExportData={handleExportData}
-              onImportData={handleImportData}
-            />
           </div>
         </GlassCard>
       </motion.div>
@@ -227,7 +232,7 @@ export const AdminJenjangPage = () => {
               <Thead>
                 <Tr className="bg-slate-50/50">
                   <Th className="font-black text-slate-500 uppercase tracking-widest text-[10px]">Nama Jenjang</Th>
-                  <Th className="font-black text-slate-500 uppercase tracking-widest text-[10px]">Mundzir / Kepala</Th>
+                  <Th className="font-black text-slate-500 uppercase tracking-widest text-[10px]">Mufatish / Kepala</Th>
                   <Th className="font-black text-slate-500 uppercase tracking-widest text-[10px] text-right">Aksi</Th>
                 </Tr>
               </Thead>
@@ -252,11 +257,12 @@ export const AdminJenjangPage = () => {
                       </Td>
                       <Td>
                         <span className="font-bold text-slate-600 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm inline-block group-hover:border-indigo-200 transition-colors">
-                          {item.mundzirName || 'Belum Diatur'}
+                          {item.mufatishName || 'Belum Diatur'}
                         </span>
                       </Td>
-                      <Td className="text-right space-x-2">
-                        <button
+                      <Td>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
                           onClick={() => openEditModal(item)}
                           className="p-2 rounded-xl text-blue-500 hover:bg-blue-50 hover:text-blue-600 transition-colors focus:outline-hidden"
                           title="Edit"
@@ -270,6 +276,7 @@ export const AdminJenjangPage = () => {
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
+                        </div>
                       </Td>
                     </motion.tr>
                   ))}
@@ -306,13 +313,18 @@ export const AdminJenjangPage = () => {
             />
           </div>
           <div>
-            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Nama Mundzir (Kepala Jenjang)</label>
-            <SoftInput
-              value={formMundzir}
-              onChange={(e) => setFormMundzir(e.target.value)}
-              placeholder="e.g. Agus H. Bahauddin"
+            <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Pilih Kepala Jenjang / Mufatish</label>
+            <PremiumSelect
+              value={formMufatishId}
+              onChange={(e) => setFormMufatishId(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xs font-bold text-slate-700 outline-hidden focus:border-blue-500 focus:bg-white transition-all neumorph-pressed"
               required
-            />
+            >
+              <option value="">-- Pilih Asatidz --</option>
+              {asatidzList.map(a => (
+                <option key={a.id} value={a.id}>{a.name}</option>
+              ))}
+            </PremiumSelect>
           </div>
           <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
             <PremiumButton type="button" variant="ghost" onClick={() => setModalOpen(false)}>

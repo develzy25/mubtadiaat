@@ -92,7 +92,6 @@ export const AdminBlokKamarPage = () => {
     loadData();
   }, []);
 
-
   // Blok CRUD
   const handleSaveBlok = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -297,8 +296,8 @@ export const AdminBlokKamarPage = () => {
         </button>
       </div>
 
-      {/* Toolbar */}
-      <GlassCard variant="neumorph" className="p-4 flex flex-col md:flex-row gap-4 items-center justify-between">
+      {/* Action Bar */}
+      <GlassCard className="p-4 flex flex-col md:flex-row gap-4 items-center justify-between shadow-[0_4px_20px_rgb(0,0,0,0.03)] mb-6">
         <div className="relative w-full md:w-80">
           <SoftInput
             placeholder={`Cari ${activeTab === 'BLOK' ? 'nama blok' : 'kamar atau penasihat'}...`}
@@ -308,34 +307,43 @@ export const AdminBlokKamarPage = () => {
             className="w-full"
           />
         </div>
-      </GlassCard>
+        
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end relative">
+          <button
+            className="p-2.5 rounded-xl border bg-white border-slate-200 text-slate-600 hover:bg-slate-50 transition-all flex items-center gap-2 text-sm font-bold"
+            title="Filter Data (Segera Hadir)"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-filter"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            <span className="hidden sm:inline">Filter</span>
+          </button>
 
-      <div className="flex flex-col items-end gap-3 mb-6">
-        <PremiumButton 
-          onClick={() => {
-            if (activeTab === 'BLOK') {
-              setEditingBlok(null);
-              setFormBlokName('');
-              setBlokModalOpen(true);
-            } else {
-              setEditingKamar(null);
-              setFormKamarName('');
-              setFormKamarPenasihat('');
-              setFormKamarBlokId(blokList.length > 0 ? blokList[0].id : '');
-              setKamarModalOpen(true);
-            }
-          }}
-          variant="primary"
-          leftIcon={<Plus className="w-5 h-5" />}
-        >
-          Tambah {activeTab === 'BLOK' ? 'Blok' : 'Kamar'}
-        </PremiumButton>
-        <DataExportImport 
-          onDownloadTemplate={handleDownloadTemplate}
-          onExportData={handleExportData}
-          onImportData={handleImportData}
-        />
-      </div>
+          <DataExportImport 
+            onDownloadTemplate={handleDownloadTemplate}
+            onExportData={handleExportData}
+            onImportData={handleImportData}
+          />
+          <PremiumButton 
+            onClick={() => {
+              if (activeTab === 'BLOK') {
+                setEditingBlok(null);
+                setFormBlokName('');
+                setBlokModalOpen(true);
+              } else {
+                setEditingKamar(null);
+                setFormKamarName('');
+                setFormKamarPenasihat('');
+                setFormKamarBlokId(blokList.length > 0 ? blokList[0].id : '');
+                setKamarModalOpen(true);
+              }
+            }}
+            variant="primary"
+            leftIcon={<Plus className="w-5 h-5" />}
+            className="w-full md:w-auto shadow-[0_4px_15px_rgba(79,70,229,0.3)] hover:shadow-[0_6px_25px_rgba(79,70,229,0.4)] transition-all"
+          >
+            Tambah {activeTab === 'BLOK' ? 'Blok' : 'Kamar'}
+          </PremiumButton>
+        </div>
+      </GlassCard>
 
       {/* Content */}
       <GlassCard variant="neumorph" className="overflow-hidden border border-slate-200/50">
@@ -364,8 +372,8 @@ export const AdminBlokKamarPage = () => {
                         {getBlokKamarCount(blok.id)} Kamar
                       </span>
                     </Td>
-                    <Td className="text-right">
-                      <div className="flex items-center justify-end gap-2">
+                    <Td>
+                        <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => {
                             setEditingBlok(blok);
@@ -382,8 +390,8 @@ export const AdminBlokKamarPage = () => {
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
-                      </div>
-                    </Td>
+                        </div>
+                      </Td>
                   </Tr>
                 ))}
                 {filteredBlok.length === 0 && (
@@ -421,7 +429,7 @@ export const AdminBlokKamarPage = () => {
                           {siswiCount} Siswi
                         </span>
                       </Td>
-                      <Td className="text-right">
+                      <Td>
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => {

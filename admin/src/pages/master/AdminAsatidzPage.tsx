@@ -48,14 +48,7 @@ export const AdminAsatidzPage = () => {
       }
     } catch (error) {
       console.error(error);
-      // Dummy data fallback if backend not ready
-      if (data.length === 0) {
-        setData([
-          { id: '1', name: 'Ust. Haris', role: 'Mustahiq', phone: '081234567890' },
-          { id: '2', name: 'Ust. Fulan', role: 'Munawwib', phone: '081234567891' },
-          { id: '3', name: 'Ust. Ahmad', role: 'Mufatish', phone: '' },
-        ]);
-      }
+      showToast('Gagal memuat data Asatidz', 'error');
     }
   };
 
@@ -90,7 +83,7 @@ export const AdminAsatidzPage = () => {
   };
 
   const handleDelete = (item: masterService.AsatidzItem) => {
-    showConfirm(
+      showConfirm(
       'Hapus Data',
       `Apakah Anda yakin ingin menghapus data asatidz ${item.name}?`,
       async () => {
@@ -102,10 +95,9 @@ export const AdminAsatidzPage = () => {
           } else {
             showToast('Gagal menghapus data', 'error');
           }
-        } catch {
-          // Dummy logic fallback
-          setData(prev => prev.filter(p => p.id !== item.id));
-          showToast('Data berhasil dihapus (Local)', 'success');
+        } catch (error) {
+          console.error(error);
+          showToast('Terjadi kesalahan saat menghapus data', 'error');
         }
       }
     );
@@ -134,16 +126,9 @@ export const AdminAsatidzPage = () => {
       } else {
         showToast(res.message || 'Gagal menyimpan data', 'error');
       }
-    } catch {
-      // Dummy logic fallback
-      const newItem = { ...payload, id: editingItem ? editingItem.id : Math.random().toString() };
-      if (editingItem) {
-        setData(prev => prev.map(p => p.id === editingItem.id ? newItem : p));
-      } else {
-        setData(prev => [...prev, newItem]);
-      }
-      showToast(`Berhasil menyimpan data (Local)`, 'success');
-      setModalOpen(false);
+    } catch (error) {
+      console.error(error);
+      showToast('Terjadi kesalahan saat menyimpan data', 'error');
     }
   };
 
@@ -207,15 +192,6 @@ export const AdminAsatidzPage = () => {
             Kelola data Mundzir, Mufatish, Mustahiq, dan Munawwib.
           </p>
         </div>
-        <div className="flex flex-col items-end gap-3">
-          <PremiumButton onClick={openAddModal} leftIcon={<Plus className="w-4 h-4" />} className="py-2 px-4 shadow-md bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold flex items-center gap-2">Tambah Pengurus
-          </PremiumButton>
-          <DataExportImport 
-            onDownloadTemplate={handleDownloadTemplate}
-            onExportData={handleExportData}
-            onImportData={handleImportData}
-          />
-        </div>
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
@@ -233,8 +209,7 @@ export const AdminAsatidzPage = () => {
               />
             </div>
 
-            {/* Filter Popover */}
-            <div className="relative flex justify-end w-full md:w-auto" ref={filterRef}>
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end relative" ref={filterRef}>
               <button
                 onClick={() => setShowFilter(!showFilter)}
                 className={`p-2.5 rounded-xl border transition-all flex items-center gap-2 text-sm font-bold ${
@@ -271,6 +246,15 @@ export const AdminAsatidzPage = () => {
                   </motion.div>
                 )}
               </AnimatePresence>
+              
+              <DataExportImport 
+                onDownloadTemplate={handleDownloadTemplate}
+                onExportData={handleExportData}
+                onImportData={handleImportData}
+              />
+
+              <PremiumButton onClick={openAddModal} leftIcon={<Plus className="w-4 h-4" />} className="py-2.5 px-4 shadow-md bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold flex items-center gap-2">Tambah Pengurus
+              </PremiumButton>
             </div>
           </div>
 
@@ -320,13 +304,15 @@ export const AdminAsatidzPage = () => {
                           <span className="text-slate-400 text-sm italic">Belum diset</span>
                         )}
                       </Td>
-                      <Td className="text-right space-x-2">
-                        <button onClick={() => openEditModal(item)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-colors">
-                          <Edit3 className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => handleDelete(item)} className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition-colors">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                      <Td>
+                        <div className="flex items-center justify-end gap-2">
+                          <button onClick={() => openEditModal(item)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-colors border border-transparent hover:border-blue-100">
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => handleDelete(item)} className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition-colors border border-transparent hover:border-rose-100">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </Td>
                     </motion.tr>
                   ))}

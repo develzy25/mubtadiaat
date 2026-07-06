@@ -147,15 +147,17 @@ export const AdminLogsPage = () => {
                       <div>IP: {log.ipAddress}</div>
                       <div className="text-[9px] truncate max-w-xs">{log.device}</div>
                     </Td>
-                    <Td className="text-right">
-                      <button
+                    <Td>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
                         onClick={() => setSelectedLog(log)}
                         className="p-1.5 rounded-lg bg-slate-100 hover:bg-indigo-50 text-slate-500 hover:text-indigo-600 transition-colors inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider"
                       >
                         <Eye className="w-3.5 h-3.5" />
                         Lihat Data
                       </button>
-                    </Td>
+                        </div>
+                      </Td>
                   </Tr>
                 ))}
                 {filteredLogs.length === 0 && (

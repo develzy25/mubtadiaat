@@ -104,7 +104,7 @@ export const saveRapotBatch = async (c: Context) => {
         nilaiPrestasi: item.predikatOverride || null,
         catatan: item.catatan || '',
         isFinalized: false,
-      });
+      }).run();
     } else {
       // Update existing
       await db.update(schema.rapotSemester).set({
@@ -113,13 +113,13 @@ export const saveRapotBatch = async (c: Context) => {
         nilaiAkhlaq: item.nilaiAkhlaq || 8,
         nilaiPrestasi: item.predikatOverride || null,
         catatan: item.catatan || '',
-      }).where(eq(schema.rapotSemester.id, rapotId));
+      }).where(eq(schema.rapotSemester.id, rapotId)).run();
     }
 
     // Save Nilai Array
     if (item.scores && Array.isArray(item.scores)) {
       // Clear existing nilai for this rapot to simplify update
-      await db.delete(schema.rapotNilai).where(eq(schema.rapotNilai.rapotId, rapotId));
+      await db.delete(schema.rapotNilai).where(eq(schema.rapotNilai.rapotId, rapotId)).run();
       
       const payloadNilai = item.scores.map((n: any) => {
         let tamrin = n.tamrinScore || 0;
@@ -146,7 +146,7 @@ export const saveRapotBatch = async (c: Context) => {
       });
 
       if (payloadNilai.length > 0) {
-        await db.insert(schema.rapotNilai).values(payloadNilai);
+        await db.insert(schema.rapotNilai).values(payloadNilai).run();
       }
     }
   }
@@ -280,7 +280,7 @@ export const finalizeKelas = async (c: Context) => {
         eq(schema.rapotSemester.semester, semester),
         eq(schema.rapotSemester.academicYear, academicYear)
       )
-    );
+    ).run();
 
   return c.json({ success: true, message: 'Kelas berhasil difinalisasi' });
 };

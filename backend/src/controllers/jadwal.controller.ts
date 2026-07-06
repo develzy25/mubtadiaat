@@ -54,7 +54,7 @@ export const saveJadwalBatch = async (c: Context) => {
     const existing = await db.select().from(schema.kitab).where(eq(schema.kitab.name, name)).limit(1);
     if (existing.length > 0) return existing[0].id;
     const newId = 'ktb_' + Date.now() + Math.random().toString(36).substring(7);
-    await db.insert(schema.kitab).values({ id: newId, name, tingkatId });
+    await db.insert(schema.kitab).values({ id: newId, name, tingkatId }).run();
     return newId;
   };
 
@@ -64,7 +64,7 @@ export const saveJadwalBatch = async (c: Context) => {
     const existing = await db.select().from(schema.asatidz).where(eq(schema.asatidz.name, name)).limit(1);
     if (existing.length > 0) return existing[0].id;
     const newId = 'ast_' + Date.now() + Math.random().toString(36).substring(7);
-    await db.insert(schema.asatidz).values({ id: newId, name, nip: '-' });
+    await db.insert(schema.asatidz).values({ id: newId, name, nip: '-' }).run();
     return newId;
   };
 
@@ -95,11 +95,11 @@ export const saveJadwalBatch = async (c: Context) => {
       eq(schema.jadwalPelajaran.kwartal, kwartal),
       eq(schema.jadwalPelajaran.academicYear, academicYear)
     )
-  );
+  ).run();
 
   // Insert new items
   if (resolvedItems.length > 0) {
-    await db.insert(schema.jadwalPelajaran).values(resolvedItems);
+    await db.insert(schema.jadwalPelajaran).values(resolvedItems).run();
   }
 
   return c.json({ success: true, message: 'Jadwal saved successfully' });

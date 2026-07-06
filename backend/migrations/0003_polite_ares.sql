@@ -1,0 +1,1 @@
+ALTER TABLE `asatidz` ADD `role` text;

@@ -42,6 +42,7 @@ export const AdminUsersPage = () => {
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
 
   // Modal states
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -240,7 +241,26 @@ export const AdminUsersPage = () => {
             Manajemen akun dan hak akses.
           </p>
         </div>
-        <div className="flex flex-col items-end gap-3">
+      </div>
+
+      {/* Action Bar */}
+      <GlassCard className="p-4 flex flex-col md:flex-row gap-4 items-center justify-between shadow-[0_4px_20px_rgb(0,0,0,0.03)]">
+        <div className="relative w-full md:w-80">
+          <SoftInput
+            placeholder="Cari pengguna..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full"
+          />
+        </div>
+        
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end relative">
+          <DataExportImport 
+            onDownloadTemplate={handleDownloadTemplate}
+            onExportData={handleExportData}
+            onImportData={handleImportData}
+            isLoading={loading}
+          />
           <PremiumButton 
             onClick={openAddModal}
             variant="primary"
@@ -248,14 +268,8 @@ export const AdminUsersPage = () => {
           >
             Tambah Pengurus
           </PremiumButton>
-          <DataExportImport 
-            onDownloadTemplate={handleDownloadTemplate}
-            onExportData={handleExportData}
-            onImportData={handleImportData}
-            isLoading={loading}
-          />
         </div>
-      </div>
+      </GlassCard>
 
       {/* Main Grid */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -284,7 +298,7 @@ export const AdminUsersPage = () => {
                   </Tr>
                 </Thead>
                 <Tbody>
-                  {users.map(user => (
+                  {users.filter(u => u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase())).map(user => (
                     <Tr key={user.id}>
                       <Td>
                         <div className="font-bold text-slate-800">{user.name}</div>
@@ -306,7 +320,8 @@ export const AdminUsersPage = () => {
                       <Td>
                         <div className="text-[10px] font-semibold text-slate-500">{user.createdAt || '-'}</div>
                       </Td>
-                      <Td className="text-right">
+                      <Td>
+                        <div className="flex items-center justify-end gap-2">
                           <div className="flex items-center justify-end gap-1.5">
                             <button
                               onClick={() => openEditModal(user)}
@@ -330,7 +345,8 @@ export const AdminUsersPage = () => {
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
-                        </Td>
+                        </div>
+                      </Td>
                     </Tr>
                   ))}
                 </Tbody>
