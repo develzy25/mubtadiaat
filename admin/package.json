@@ -18,6 +18,7 @@
   "build": {
     "appId": "com.develzy25.mubtadiaat",
     "productName": "Mubtadiaat Admin",
+    "artifactName": "mubtadiaat.admin.v.2.5.exe",
     "directories": {
       "output": "dist_electron"
     },
