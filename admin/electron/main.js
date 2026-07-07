@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog } from 'electron';
+import { app, BrowserWindow, dialog, Menu } from 'electron';
 import pkg from 'electron-updater';
 const { autoUpdater } = pkg;
 import path from 'path';
@@ -14,8 +14,12 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
-    }
+    },
+    autoHideMenuBar: true
   });
+  
+  // Remove default menu to improve aesthetics
+  Menu.setApplicationMenu(null);
 
   // In production, load the built index.html
   // In development, you could load the Vite dev server URL
