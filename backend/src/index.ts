@@ -93,8 +93,22 @@ app.post('/api/auth/sign-in/username', async (c) => {
     const isValid = await verifyPassword({ hash: account.password!, password: body.password });
     if (!isValid) return c.json({ error: "Invalid credentials" }, 401);
 
-    const ctx = await auth.$context;
-    const session = await ctx.internalAdapter.createSession(user.id, true);
+    const token = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7); // 7 days
+    const sessionId = crypto.randomUUID();
+
+    await db.insert(schema.sessions).values({
+      id: sessionId,
+      userId: user.id,
+      token,
+      expiresAt,
+      ipAddress: c.req.header('x-real-ip') || c.req.header('cf-connecting-ip'),
+      userAgent: c.req.header('user-agent'),
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }).run();
+
+    const session = { id: sessionId, userId: user.id, token, expiresAt };
 
     // create set-cookie header
     const reqOrigin = c.req.header('origin') || c.env.BETTER_AUTH_URL;
