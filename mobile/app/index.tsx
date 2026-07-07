@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, SafeAreaView, KeyboardAvoidingView, Platform, Image, Dimensions, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Lock, User, Eye, EyeOff } from 'lucide-react-native';
+import { Lock, User, Eye, EyeOff, LogIn } from 'lucide-react-native';
 import { api, setAuthToken } from '../src/services/api';
 
 const { width } = Dimensions.get('window');
@@ -12,6 +12,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [focusedInput, setFocusedInput] = useState<'username' | 'password' | null>(null);
 
   const handleLogin = async () => {
     if (!username || !password) return;
@@ -36,93 +37,93 @@ export default function LoginScreen() {
     }
   };
 
-  // Neumorphic Outer Shadow
-  const neumorphicShadow = {
-    elevation: 12,
-    shadowColor: '#94A3B8',
-    shadowOffset: { width: 8, height: 16 },
-    shadowOpacity: 0.2,
-    shadowRadius: 24,
-    backgroundColor: '#FFFFFF'
-  };
-
   return (
-    <SafeAreaView className="flex-1 bg-[#F4F7FC]">
-      
-      {/* 3D Glassmorphism Abstract Background */}
-      <View className="absolute top-[-10%] left-[-20%] w-[300px] h-[300px] bg-blue-300/30 rounded-full blur-[80px]" />
-      <View className="absolute bottom-[-10%] right-[-20%] w-[350px] h-[350px] bg-indigo-300/30 rounded-full blur-[100px]" />
+    <SafeAreaView className="flex-1 bg-[#09090B]">
+      {/* Deep Space Dark Glassmorphism Abstract Background */}
+      <View className="absolute top-[-10%] left-[-20%] w-[400px] h-[400px] bg-blue-600/10 rounded-full blur-[100px]" />
+      <View className="absolute bottom-[-10%] right-[-20%] w-[350px] h-[350px] bg-indigo-600/10 rounded-full blur-[100px]" />
+      <View className="absolute top-[30%] right-[-10%] w-[200px] h-[200px] bg-emerald-500/10 rounded-full blur-[80px]" />
 
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1 justify-center items-center"
       >
-        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 24, width: Platform.OS === 'web' ? 400 : width }}>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 24, width: Platform.OS === 'web' ? 420 : width }}>
           
           <View className="items-center mb-10 w-full">
-            {/* 3D Logo Container */}
+            {/* Premium Floating Logo */}
             <View 
-              style={{ elevation: 15, shadowColor: '#94A3B8', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.15, shadowRadius: 20 }}
-              className="w-36 h-36 bg-white rounded-full items-center justify-center mb-6 border-4 border-white"
+              style={{ elevation: 20, shadowColor: '#3B82F6', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 30 }}
+              className="w-32 h-32 bg-[#18181B] rounded-[32px] items-center justify-center mb-8 border border-white/10"
             >
-              <Image source={require('../assets/logo.png')} style={{ width: 100, height: 100 }} resizeMode="contain" />
+              <Image source={require('../assets/logo.png')} style={{ width: 80, height: 80 }} resizeMode="contain" />
             </View>
-            <Text className="text-3xl font-black text-slate-800 tracking-tight text-center">e-Mubtadiaat</Text>
-            <Text className="text-slate-500 mt-2 font-bold tracking-widest uppercase text-xs">Portal Mustahiq & Asatidz</Text>
+            <Text className="text-4xl font-black text-white tracking-tight text-center mb-2">e-Mubtadiaat</Text>
+            <View className="bg-white/5 px-4 py-1.5 rounded-full border border-white/10">
+              <Text className="text-slate-300 font-bold tracking-widest uppercase text-[10px]">Portal Mustahiq & Asatidz</Text>
+            </View>
           </View>
 
-          {/* Neumorphic Login Card */}
-          <View style={[neumorphicShadow, { borderRadius: 40, width: '100%', padding: 32, borderCurve: 'continuous', borderWidth: 2, borderColor: '#FFFFFF' }]}>
+          {/* Premium Glassmorphism Login Card */}
+          <View className="w-full bg-[#18181B]/80 rounded-[40px] p-8 border border-white/10 overflow-hidden relative">
             
-            <View className="space-y-2 mb-6">
-              <Text className="text-slate-500 font-extrabold text-[11px] uppercase tracking-wider ml-2">Nama Pengguna</Text>
-              <View className="flex-row items-center bg-[#F1F5F9] rounded-[24px] border border-white px-5 h-16 shadow-sm">
-                <User size={22} className="text-blue-500 mr-4" />
+            {/* Decorative Card Glow */}
+            <View className="absolute top-0 left-1/4 w-1/2 h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-50" />
+
+            {/* Input Username */}
+            <View className="mb-6 mt-2">
+              <Text className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-3 ml-2">Nama Pengguna</Text>
+              <View className={`flex-row items-center h-16 px-5 rounded-3xl border transition-colors duration-200 ${focusedInput === 'username' ? 'border-blue-500/50 bg-blue-500/5' : 'border-white/5 bg-white/5'}`}>
+                <User size={20} color={focusedInput === 'username' ? '#60A5FA' : '#64748B'} className="mr-3" />
                 <TextInput 
-                  className="flex-1 text-slate-800 font-bold text-base h-full"
+                  className="flex-1 text-white font-semibold text-base h-full"
                   placeholder="Masukkan username..."
-                  placeholderTextColor="#94A3B8"
+                  placeholderTextColor="#475569"
                   value={username}
                   onChangeText={setUsername}
                   autoCapitalize="none"
-                  style={{ outlineStyle: 'none' } as any} // Remove web focus ring
+                  onFocus={() => setFocusedInput('username')}
+                  onBlur={() => setFocusedInput(null)}
+                  style={{ outlineStyle: 'none' } as any}
                 />
               </View>
             </View>
 
-            <View className="space-y-2 mb-8">
-              <Text className="text-slate-500 font-extrabold text-[11px] uppercase tracking-wider ml-2">Kata Sandi</Text>
-              <View className="flex-row items-center bg-[#F1F5F9] rounded-[24px] border border-white px-5 h-16 shadow-sm">
-                <Lock size={22} className="text-blue-500 mr-4" />
+            {/* Input Password */}
+            <View className="mb-10">
+              <Text className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-3 ml-2">Kata Sandi</Text>
+              <View className={`flex-row items-center h-16 px-5 rounded-3xl border transition-colors duration-200 ${focusedInput === 'password' ? 'border-blue-500/50 bg-blue-500/5' : 'border-white/5 bg-white/5'}`}>
+                <Lock size={20} color={focusedInput === 'password' ? '#60A5FA' : '#64748B'} className="mr-3" />
                 <TextInput 
-                  className="flex-1 text-slate-800 font-bold text-base h-full"
+                  className="flex-1 text-white font-semibold text-base h-full"
                   placeholder="Masukkan password..."
-                  placeholderTextColor="#94A3B8"
+                  placeholderTextColor="#475569"
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
-                  style={{ outlineStyle: 'none' } as any} // Remove web focus ring
+                  onFocus={() => setFocusedInput('password')}
+                  onBlur={() => setFocusedInput(null)}
+                  style={{ outlineStyle: 'none' } as any}
                 />
-                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} className="p-2 bg-white rounded-full shadow-sm ml-2">
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} className="p-2 -mr-2">
                   {showPassword ? (
-                    <EyeOff size={18} color="#94A3B8" />
+                    <EyeOff size={20} color="#64748B" />
                   ) : (
-                    <Eye size={18} color="#3B82F6" />
+                    <Eye size={20} color="#60A5FA" />
                   )}
                 </TouchableOpacity>
               </View>
             </View>
 
-            {/* Premium 3D Button */}
+            {/* Neon Glow Button */}
             <TouchableOpacity 
               onPress={handleLogin}
               disabled={isLoading}
-              style={{ elevation: 8, shadowColor: '#2563EB', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 16 }}
-              className={`w-full h-16 rounded-[24px] items-center justify-center ${isLoading ? 'bg-blue-400' : 'bg-[#2563EB]'}`}
+              style={{ elevation: isLoading ? 0 : 15, shadowColor: '#3B82F6', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.4, shadowRadius: 20 }}
+              className={`w-full h-16 rounded-[28px] items-center justify-center flex-row ${isLoading ? 'bg-[#27272A]' : 'bg-[#2563EB]'}`}
             >
-              {/* Inner highlight for 3D effect */}
-              <View className="absolute top-0 left-0 right-0 h-1/2 bg-white/20 rounded-t-[24px]" />
-              <Text className="text-white font-black text-lg tracking-wider">
+              {!isLoading && <LogIn size={20} color="white" className="mr-3" />}
+              <Text className={`font-black text-base tracking-widest ${isLoading ? 'text-slate-500' : 'text-white'}`}>
                 {isLoading ? 'MEMPROSES...' : 'MASUK SISTEM'}
               </Text>
             </TouchableOpacity>
