@@ -38,7 +38,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#F8FAFC]" style={Platform.OS === 'web' ? { minHeight: '100vh', width: '100%' } : {}}>
+    <SafeAreaView className="flex-1 bg-[#F8FAFC]" style={Platform.OS === 'web' ? { minHeight: '100vh', width: '100%' } as any : {}}>
       {/* Premium Light Glassmorphism Abstract Background */}
       <View className="absolute top-[-5%] left-[-10%] w-[350px] h-[350px] bg-blue-200/40 rounded-full blur-[80px]" />
       <View className="absolute bottom-[-10%] right-[-10%] w-[300px] h-[300px] bg-indigo-200/40 rounded-full blur-[80px]" />
