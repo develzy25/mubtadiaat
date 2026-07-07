@@ -51,7 +51,7 @@ export function Topbar() {
 
       <div className="flex items-center gap-6 ml-auto">
         {/* Info Box: Global Settings (Academic Year) */}
-        <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-xl relative group cursor-pointer transition-colors hover:bg-blue-100">
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-xl relative group cursor-pointer transition-colors hover:bg-blue-100">
           <BookOpen className="w-4 h-4 text-blue-600" />
           <div className="flex flex-col">
             <span className="text-[10px] font-bold text-blue-800 uppercase tracking-wider">Tahun Ajaran</span>

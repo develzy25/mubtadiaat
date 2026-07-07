@@ -35,9 +35,9 @@ interface ScoreItem {
 interface GridRow {
   student: StudentData;
   rapotId: string | null;
-  izinCount: number;
-  tanpaIzinCount: number;
-  nilaiAkhlaq: number;
+  izinCount: number | string;
+  tanpaIzinCount: number | string;
+  nilaiAkhlaq: number | string;
   catatan: string;
   predikatOverride: string | null;
   scores: ScoreItem[];
@@ -146,9 +146,9 @@ export const AdminRapotPage = () => {
           return {
             student: row.student,
             rapotId: row.rapotId,
-            izinCount: row.izinCount,
-            tanpaIzinCount: row.tanpaIzinCount,
-            nilaiAkhlaq: row.nilaiAkhlaq ?? 8,
+            izinCount: row.izinCount ?? '',
+            tanpaIzinCount: row.tanpaIzinCount ?? '',
+            nilaiAkhlaq: row.nilaiAkhlaq ?? '',
             catatan: row.catatan,
             predikatOverride: row.predikatOverride,
             scores
@@ -244,7 +244,7 @@ export const AdminRapotPage = () => {
         showToast(`Nilai Akhlaq pelajaran untuk ${row.student.name} harus antara 4 s/d 8`, 'error');
         return;
       }
-      if (row.nilaiAkhlaq < 4 || row.nilaiAkhlaq > 8) {
+      if (row.nilaiAkhlaq !== '' && (Number(row.nilaiAkhlaq) < 4 || Number(row.nilaiAkhlaq) > 8)) {
         showToast(`Nilai Akhlaq perilaku untuk ${row.student.name} harus antara 4 s/d 8`, 'error');
         return;
       }
@@ -573,16 +573,16 @@ export const AdminRapotPage = () => {
                     <Td className="text-center">
                       <input
                         type="text"
-                        value={row.nilaiAkhlaq ?? 8}
+                        value={row.nilaiAkhlaq}
                         disabled={classStatus === 'FINAL'}
                         onChange={(e) => {
-                          const val = parseInt(e.target.value) || 0;
-                          if (val >= 0 && val <= 8) {
+                          const val = e.target.value === '' ? '' : parseInt(e.target.value) || 0;
+                          if (val === '' || (val >= 0 && val <= 8)) {
                             handleHeaderChange(row.student.id, 'nilaiAkhlaq', val);
                           }
                         }}
                         className="w-10 h-8 text-center rounded-lg border border-slate-200 text-xs font-bold text-slate-700 focus:outline-hidden focus:border-indigo-500 disabled:opacity-50"
-                        placeholder="8"
+                        placeholder="4-8"
                       />
                     </Td>
                   </Tr>
@@ -646,8 +646,8 @@ export const AdminRapotPage = () => {
                 const totalMapel = row.scores.length * 2;
                 const avg = totalMapel > 0 ? Math.round(sumS1S2 / totalMapel) : 0;
                 
-                const pengurangIzin = Math.floor(row.izinCount / 15);
-                const pengurangAlpa = Math.floor(row.tanpaIzinCount / 5);
+                const pengurangIzin = Math.floor(Number(row.izinCount) / 15);
+                const pengurangAlpa = Math.floor(Number(row.tanpaIzinCount) / 5);
                 const nilaiPrestasi = Math.max(0, avg - pengurangIzin - pengurangAlpa);
                 
                 let calculatedPredikat = 'الرديء';
