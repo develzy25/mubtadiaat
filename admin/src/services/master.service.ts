@@ -122,3 +122,4 @@ export const fetchAsatidz = async () => handleResponse(await fetch(`${API_URL}/a
 export const createAsatidz = async (data: any) => handleResponse(await fetch(`${API_URL}/admin/asatidz`, { method: 'POST', headers: getHeaders(), body: JSON.stringify(data) }));
 export const updateAsatidz = async (id: string, data: any) => handleResponse(await fetch(`${API_URL}/admin/asatidz/${id}`, { method: 'PUT', headers: getHeaders(), body: JSON.stringify(data) }));
 export const deleteAsatidz = async (id: string) => handleResponse(await fetch(`${API_URL}/admin/asatidz/${id}`, { method: 'DELETE', headers: getHeaders() }));
+export const generateAccountAsatidz = async (id: string) => handleResponse(await fetch(`${API_URL}/admin/asatidz/${id}/generate-account`, { method: 'POST', headers: getHeaders() }));

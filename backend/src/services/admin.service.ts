@@ -44,23 +44,53 @@ export class AdminService {
   async seedUsers(auth: any) {
     await adminRepository.clearAuthTables();
     const accountsToCreate = [
-      { name: 'Administrator', email: 'admin@mubtadiaat.id', role: 1 },
-      { name: 'Mundzir Lirboyo', email: 'mundzir@mubtadiaat.id', role: 2 },
-      { name: 'Mufatish Akademik', email: 'mufatish@mubtadiaat.id', role: 3 },
-      { name: 'Mustahiq Kelas', email: 'mustahiq@mubtadiaat.id', role: 4 }
+      { name: 'Administrator', email: 'admin@mubtadiaat.com', role: 1, username: 'admin' }
     ];
     const results = [];
     for (const acc of accountsToCreate) {
       const res = await auth.api.signUpEmail({
-        body: { email: acc.email, password: 'password123', name: acc.name },
+        body: { email: acc.email, password: 'mubtadiaat123', name: acc.name },
         asResponse: false
       });
       if (res?.user?.id) {
-        await adminRepository.updateUserRole(res.user.id, acc.role);
-        results.push({ email: acc.email, password: 'password123', role: acc.role });
+        await adminRepository.updateUserRoleAndUsername(res.user.id, acc.role, acc.username);
+        results.push({ email: acc.email, password: 'mubtadiaat123', role: acc.role, username: acc.username });
       }
     }
     return results;
+  }
+
+  async generateAccountAsatidz(id: string, auth: any) {
+    const asatidz = await adminRepository.getById('asatidz', id);
+    if (!asatidz) throw new Error("Pengurus tidak ditemukan");
+    if (asatidz.userId) throw new Error("Pengurus ini sudah memiliki akun");
+
+    const roleMapping: Record<string, number> = {
+      'Admin': 1,
+      'Mundzir': 2,
+      'Mufatish': 3,
+      'Mustahiq': 4,
+      'Munawwib': 4
+    };
+    const roleId = roleMapping[asatidz.role] || 4;
+    
+    // Clean name: lower case, remove non-alphanumeric, max 10 chars
+    const cleanName = asatidz.name.split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+    const prefix = (asatidz.role || 'user').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const username = `${prefix}_${cleanName}${Math.floor(Math.random() * 100)}`;
+    const email = `${username}@mubtadiaat.id`;
+
+    const res = await auth.api.signUpEmail({
+      body: { email, password: 'mubtadiaat123', name: asatidz.name },
+      asResponse: false
+    });
+
+    if (res?.user?.id) {
+      await adminRepository.updateUserRoleAndUsername(res.user.id, roleId, username);
+      await adminRepository.update('asatidz', id, { userId: res.user.id });
+      return { success: true, username, email, password: 'mubtadiaat123' };
+    }
+    throw new Error("Gagal membuat akun");
   }
 
   // Generic

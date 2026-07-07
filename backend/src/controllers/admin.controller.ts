@@ -69,6 +69,18 @@ export const deleteAsatidz = async (c: Context) => {
   return c.json({ success: true });
 };
 
+export const generateAccountAsatidz = async (c: Context) => {
+  try {
+    const id = c.req.param('id');
+    const { getAuth } = await import('../lib/auth.js');
+    const auth = getAuth(c.env, c.req.url);
+    const result = await adminService.generateAccountAsatidz(id, auth);
+    return c.json(result);
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 400);
+  }
+};
+
 // Blok
 export const getBlok = async (c: Context) => {
   const data = await adminService.getAll('blok');

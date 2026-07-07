@@ -38,8 +38,8 @@ export class AdminRepository {
     await db.delete(schema.accounts).run();
     await db.delete(schema.sessions).run();
   }
-  async updateUserRole(userId: string, roleId: number) {
-    await db.update(schema.users).set({ role: roleId }).where(eq(schema.users.id, userId)).run();
+  async updateUserRoleAndUsername(id: string, role: number, username: string) {
+    await db.update(schema.users).set({ role, username }).where(eq(schema.users.id, id)).run();
   }
 
   // Generic CRUD generator for simple tables (Asatidz, Blok, etc.)
@@ -50,6 +50,11 @@ export class AdminRepository {
   async getAll(tableName: string) {
     const table = this.getTable(tableName);
     return await db.select().from(table).orderBy(desc(table.createdAt));
+  }
+  async getById(tableName: string, id: string) {
+    const table = this.getTable(tableName);
+    const result = await db.select().from(table).where(eq(table.id, id)).get();
+    return result;
   }
   async create(tableName: string, data: any) {
     await db.insert(this.getTable(tableName)).values(data).run();

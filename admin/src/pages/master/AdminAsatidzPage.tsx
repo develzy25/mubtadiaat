@@ -7,7 +7,8 @@ import {
   MessageCircle,
   Phone,
   Trash2,
-  Edit3
+  Edit3,
+  UserPlus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard, PremiumButton, SoftInput, Table, Thead, Tbody, Tr, Th, Td, Modal, PremiumSelect, DataExportImport } from '../../components/ui';
@@ -98,6 +99,27 @@ export const AdminAsatidzPage = () => {
         } catch (error) {
           console.error(error);
           showToast('Terjadi kesalahan saat menghapus data', 'error');
+        }
+      }
+    );
+  };
+
+  const handleGenerateAccount = (item: masterService.AsatidzItem) => {
+    showConfirm(
+      'Generate Akun',
+      `Apakah Anda yakin ingin membuat akun login otomatis untuk ${item.name}?`,
+      async () => {
+        try {
+          const res = await masterService.generateAccountAsatidz(item.id);
+          if (res.success) {
+            showToast(`Berhasil! Username: ${res.username} - Sandi: ${res.password}`, 'success');
+            loadData();
+          } else {
+            showToast(res.error || 'Gagal generate akun', 'error');
+          }
+        } catch (error) {
+          console.error(error);
+          showToast('Terjadi kesalahan sistem saat generate akun', 'error');
         }
       }
     );
@@ -304,16 +326,21 @@ export const AdminAsatidzPage = () => {
                           <span className="text-slate-400 text-sm italic">Belum diset</span>
                         )}
                       </Td>
-                      <Td>
-                        <div className="flex items-center justify-end gap-2">
-                          <button onClick={() => openEditModal(item)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-colors border border-transparent hover:border-blue-100">
-                            <Edit3 className="w-4 h-4" />
-                          </button>
-                          <button onClick={() => handleDelete(item)} className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition-colors border border-transparent hover:border-rose-100">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </Td>
+                        <Td>
+                          <div className="flex items-center justify-end gap-2">
+                            {!item.userId && (
+                              <button onClick={() => handleGenerateAccount(item)} title="Generate Akun Login" className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors border border-transparent hover:border-indigo-100">
+                                <UserPlus className="w-4 h-4" />
+                              </button>
+                            )}
+                            <button onClick={() => openEditModal(item)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-colors border border-transparent hover:border-blue-100">
+                              <Edit3 className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => handleDelete(item)} className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition-colors border border-transparent hover:border-rose-100">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </Td>
                     </motion.tr>
                   ))}
                 </AnimatePresence>

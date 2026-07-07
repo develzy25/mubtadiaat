@@ -18,6 +18,7 @@ admin.get('/asatidz', adminController.getAsatidz);
 admin.post('/asatidz', adminController.createAsatidz);
 admin.put('/asatidz/:id', adminController.updateAsatidz);
 admin.delete('/asatidz/:id', adminController.deleteAsatidz);
+admin.post('/asatidz/:id/generate-account', adminController.generateAccountAsatidz);
 
 // Master Wilayah
 admin.get('/infrastruktur/blok', adminController.getBlok);
