@@ -294,9 +294,33 @@ export const AdminRapotPage = () => {
     try {
       const res = await masterService.fetchRekap(studentId, selectedYear);
       if (res.success) {
-        const studentObj = gridData.find(g => g.student.id === studentId)?.student;
+        const rowData = gridData.find(g => g.student.id === studentId);
+        if (rowData) {
+          const totalS1 = getRowTotalKhos(rowData);
+          const totalS2 = totalS1; 
+          const sumS1S2 = totalS1 + totalS2;
+          const totalMapel = rowData.scores.length * 2;
+          const avg = totalMapel > 0 ? Math.round(sumS1S2 / totalMapel) : 0;
+          
+          const pengurangIzin = Math.floor(Number(rowData.izinCount) / 15);
+          const pengurangAlpa = Math.floor(Number(rowData.tanpaIzinCount) / 5);
+          const nilaiPrestasi = Math.max(0, avg - pengurangIzin - pengurangAlpa);
+          
+          let calculatedPredikat = 'الرديء';
+          if (nilaiPrestasi >= 9) calculatedPredikat = 'الجيد الأول';
+          else if (nilaiPrestasi === 8) calculatedPredikat = 'الجيد الثاني';
+          else if (nilaiPrestasi === 7) calculatedPredikat = 'المتوسط الأول';
+          else if (nilaiPrestasi === 6) calculatedPredikat = 'المتوسط الثاني';
+          
+          res.data.rekap = {
+            grandTotal: totalS1,
+            izinTotal: rowData.izinCount,
+            tanpaIzinTotal: rowData.tanpaIzinCount,
+            predikat: rowData.predikatOverride || calculatedPredikat
+          };
+        }
         setPrintData({
-          student: studentObj,
+          student: rowData?.student,
           semesterData: res.data
         });
       }
