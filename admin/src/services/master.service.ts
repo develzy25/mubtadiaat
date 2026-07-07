@@ -116,6 +116,8 @@ export interface AsatidzItem {
   name: string;
   role: 'Mundzir' | 'Mufatish' | 'Mustahiq' | 'Munawwib';
   phone: string;
+  userId?: string;
+  username?: string;
 }
 
 export const fetchAsatidz = async () => handleResponse(await fetch(`${API_URL}/admin/asatidz`, { headers: getHeaders() }));

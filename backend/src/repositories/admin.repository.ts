@@ -56,6 +56,25 @@ export class AdminRepository {
     const result = await db.select().from(table).where(eq(table.id, id)).get();
     return result;
   }
+  async getAsatidzWithUsername() {
+    const result = await db
+      .select({
+        id: schema.asatidz.id,
+        userId: schema.asatidz.userId,
+        name: schema.asatidz.name,
+        nip: schema.asatidz.nip,
+        phone: schema.asatidz.phone,
+        role: schema.asatidz.role,
+        status: schema.asatidz.status,
+        createdAt: schema.asatidz.createdAt,
+        updatedAt: schema.asatidz.updatedAt,
+        username: schema.users.username,
+      })
+      .from(schema.asatidz)
+      .leftJoin(schema.users, eq(schema.asatidz.userId, schema.users.id))
+      .orderBy(desc(schema.asatidz.createdAt));
+    return result;
+  }
   async create(tableName: string, data: any) {
     await db.insert(this.getTable(tableName)).values(data).run();
   }

@@ -49,7 +49,7 @@ export const seedUsers = async (c: Context) => {
 
 // Asatidz
 export const getAsatidz = async (c: Context) => {
-  const data = await adminService.getAll('asatidz');
+  const data = await adminService.getAsatidz();
   return c.json({ success: true, data });
 };
 export const createAsatidz = async (c: Context) => {
@@ -71,7 +71,7 @@ export const deleteAsatidz = async (c: Context) => {
 
 export const generateAccountAsatidz = async (c: Context) => {
   try {
-    const id = c.req.param('id');
+    const id = c.req.param('id') || '';
     const { getAuth } = await import('../lib/auth.js');
     const auth = getAuth(c.env, c.req.url);
     const result = await adminService.generateAccountAsatidz(id, auth);

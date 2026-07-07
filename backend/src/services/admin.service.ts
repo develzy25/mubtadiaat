@@ -93,6 +93,10 @@ export class AdminService {
     throw new Error("Gagal membuat akun");
   }
 
+  async getAsatidz() {
+    return await adminRepository.getAsatidzWithUsername();
+  }
+
   // Generic
   async getAll(tableName: string) {
     return await adminRepository.getAll(tableName);
