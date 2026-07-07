@@ -8,7 +8,8 @@ export class AdminRepository {
     const [result] = await db.select({ count: count() }).from(schema.santri).where(eq(schema.santri.status, status));
     return result.count;
   }
-  async getTableCount(table: any) {
+  async getTableCount(tableName: string) {
+    const table = this.getTable(tableName);
     const [result] = await db.select({ count: count() }).from(table);
     return result.count;
   }
