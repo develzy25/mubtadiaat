@@ -65,11 +65,17 @@ jobs:
         continue-on-error: true # Local EAS build might require complex setup on GitHub Actions, fallback to simple expo export if needed.
 
       # 4. PUBLISH TO GITHUB RELEASES
+      - name: Extract Version
+        id: extract_version
+        working-directory: ./admin
+        shell: bash
+        run: echo "VERSION=v$(node -p "require('./package.json').version")" >> $GITHUB_ENV
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: "latest"
-          name: "Latest Build"
+          tag_name: ${{ env.VERSION }}
+          name: Release ${{ env.VERSION }}
           files: |
             admin/dist_electron/*.exe
             mubtadiaat-android.apk
