@@ -30,7 +30,8 @@
       "perMachine": true,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
+      "createStartMenuShortcut": true,
+      "license": "build/license.txt"
     }
   },
   "dependencies": {
