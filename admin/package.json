@@ -23,7 +23,7 @@
     },
     "win": {
       "target": "nsis",
-      "icon": "../mobile/assets/icon/Assets.xcassets/AppIcon.appiconset/256.png"
+      "icon": "icon.ico"
     },
     "nsis": {
       "oneClick": false,
@@ -31,9 +31,9 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "installerIcon": "../mobile/assets/icon/Assets.xcassets/AppIcon.appiconset/256.png",
-      "uninstallerIcon": "../mobile/assets/icon/Assets.xcassets/AppIcon.appiconset/256.png",
-      "installerHeaderIcon": "../mobile/assets/icon/Assets.xcassets/AppIcon.appiconset/256.png"
+      "installerIcon": "icon.ico",
+      "uninstallerIcon": "icon.ico",
+      "installerHeaderIcon": "icon.ico"
     }
   },
   "dependencies": {
