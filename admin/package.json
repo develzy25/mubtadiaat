@@ -2,6 +2,9 @@
   "name": "admin",
   "private": true,
   "version": "1.0.25",
+  "description": "Mubtadiaat Admin Application",
+  "author": "Develzy",
+  "repository": "github:develzy25/mubtadiaat",
   "type": "module",
   "main": "electron/main.js",
   "scripts": {
