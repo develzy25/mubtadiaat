@@ -22,14 +22,18 @@
       "output": "dist_electron"
     },
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "../mobile/assets/icon/Assets.xcassets/AppIcon.appiconset/256.png"
     },
     "nsis": {
       "oneClick": false,
       "perMachine": true,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
+      "createStartMenuShortcut": true,
+      "installerIcon": "../mobile/assets/icon/Assets.xcassets/AppIcon.appiconset/256.png",
+      "uninstallerIcon": "../mobile/assets/icon/Assets.xcassets/AppIcon.appiconset/256.png",
+      "installerHeaderIcon": "../mobile/assets/icon/Assets.xcassets/AppIcon.appiconset/256.png"
     }
   },
   "dependencies": {
