@@ -159,8 +159,22 @@ export const AdminAsatidzPage = () => {
     let formatted = item.phone.replace(/[^0-9]/g, '');
     if (formatted.startsWith('0')) formatted = '62' + formatted.slice(1);
     
-    const msg = `Assalamu'alaikum Wr. Wb. Nyuwun sewu Ust./Ustdh. *${item.name}*...`;
-    window.open(`https://api.whatsapp.com/send?phone=${formatted}&text=${encodeURIComponent(msg)}`, '_blank');
+    const hasAccount = item.userId && item.username;
+    
+    let msg = '';
+    if (item.role === 'Mundzir' || item.role === 'Mufatish') {
+      msg = `Assalamu'alaikum Wr. Wb.\nNyuwun sewu dhumateng panjenenganipun Yth. Romo/Ibu ${item.name} minangka ${item.role} ingkang minulya. Ngaturaken sugeng makarya.\n\nMenawi ngersakaken, meniko kawula kintunaken informasi akun kagem manjing (login) dateng Aplikasi Mubtadi'at:`;
+    } else {
+      msg = `Assalamu'alaikum Wr. Wb.\nNyuwun sewu Ust./Ustdh. *${item.name}* minangka ${item.role}. Ngaturaken sugeng makarya.\n\nMeniko kawula kintunaken informasi akun kagem manjing (login) dateng Aplikasi Mubtadi'at:`;
+    }
+    
+    if (hasAccount) {
+      msg += `\n\n👤 *Username:* ${item.username}\n🔑 *Sandi:* mubtadiaat123\n\nMugi-mugi pinaringan gampil lan barokah. Matur nuwun.`;
+    } else {
+      msg += `\n\n(Pangapunten, akun panjenengan dereng dipun damelaken dening Admin. Nyuwun tulung dipun tengga sekedhap nggeh).`;
+    }
+    
+    window.open(`https://web.whatsapp.com/send/?phone=${formatted}&text=${encodeURIComponent(msg)}`, '_blank');
   };
 
   const handleDownloadTemplate = async () => {
