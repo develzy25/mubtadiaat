@@ -56,6 +56,7 @@ export const AdminBlokKamarPage = () => {
   
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [filterBlokId, setFilterBlokId] = useState<string>('ALL');
 
   // Modals
   const [blokModalOpen, setBlokModalOpen] = useState(false);
@@ -254,6 +255,7 @@ export const AdminBlokKamarPage = () => {
 
   const filteredBlok = blokList.filter(b => b.name.toLowerCase().includes(search.toLowerCase()));
   const filteredKamar = kamarList.filter(k => {
+    if (filterBlokId !== 'ALL' && k.blokId !== filterBlokId) return false;
     const blok = blokList.find(b => b.id === k.blokId);
     const text = `${k.name} ${k.penasihat} ${blok?.name || ''}`.toLowerCase();
     return text.includes(search.toLowerCase());
@@ -309,15 +311,20 @@ export const AdminBlokKamarPage = () => {
         </div>
         
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end relative">
-          <button
-            className="p-2.5 rounded-xl border bg-white border-slate-200 text-slate-600 hover:bg-slate-50 transition-all flex items-center gap-2 text-sm font-bold"
-            title="Filter Data (Segera Hadir)"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-filter"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-            <span className="hidden sm:inline">Filter</span>
-          </button>
+          {activeTab === 'KAMAR' && (
+            <PremiumSelect
+              value={filterBlokId}
+              onChange={(e) => setFilterBlokId(e.target.value)}
+              className="bg-white border-slate-200 text-slate-700 text-sm h-10 px-3 pr-8 rounded-xl"
+            >
+              <option value="ALL">Semua Blok</option>
+              {blokList.map((b) => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </PremiumSelect>
+          )}
 
-          <DataExportImport 
+          <DataExportImport  
             onDownloadTemplate={handleDownloadTemplate}
             onExportData={handleExportData}
             onImportData={handleImportData}

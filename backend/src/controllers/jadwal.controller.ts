@@ -6,7 +6,11 @@ import { eq, and } from 'drizzle-orm';
 export const getJadwalByClass = async (c: Context) => {
   const classId = c.req.param('classId');
   const kwartal = parseInt(c.req.query('kwartal') || '1');
-  const year = c.req.query('year') || '2026-2027';
+  let year = c.req.query('year');
+  if (!year) {
+    const setting = await db.select().from(schema.settings).where(eq(schema.settings.id, 'global')).get();
+    year = setting?.activeAcademicYear || '2026-2027';
+  }
 
   if (!classId) return c.json({ success: false, message: 'Class ID required' }, 400);
 
@@ -38,7 +42,12 @@ export const getJadwalByClass = async (c: Context) => {
 
 export const saveJadwalBatch = async (c: Context) => {
   const body = await c.req.json();
-  const { classId, kwartal, academicYear, items } = body;
+  let { classId, kwartal, academicYear, items } = body;
+
+  if (!academicYear) {
+    const setting = await db.select().from(schema.settings).where(eq(schema.settings.id, 'global')).get();
+    academicYear = setting?.activeAcademicYear || '2026-2027';
+  }
 
   if (!classId || !items || !Array.isArray(items)) {
     return c.json({ success: false, message: 'Invalid payload' }, 400);

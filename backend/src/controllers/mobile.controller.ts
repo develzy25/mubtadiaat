@@ -56,6 +56,10 @@ export const savePresensiHarian = async (c: Context) => {
   
   if (!classId) return c.json({ success: false, message: 'Class ID required' }, 400);
 
+  let activeYear = '2026-2027';
+  const setting = await db.select().from(schema.settings).where(eq(schema.settings.id, 'global')).get();
+  if (setting) activeYear = setting.activeAcademicYear;
+
   for (const s of body) {
     const existing = await db.select().from(schema.rapotSemester)
       .where(and(eq(schema.rapotSemester.santriId, s.santri_id), eq(schema.rapotSemester.kelasId, classId)))
@@ -71,7 +75,7 @@ export const savePresensiHarian = async (c: Context) => {
         santriId: s.santri_id,
         kelasId: classId,
         semester: '1',
-        academicYear: new Date().getFullYear().toString(),
+        academicYear: activeYear,
         izinCount: s.izin,
         tanpaIzinCount: s.alpha,
         createdAt: new Date().toISOString(),
@@ -94,21 +98,42 @@ export const getDashboard = async (c: Context) => {
 
   try {
     if (role === 'mustahiq') {
-      const kelasCountResult = await db.select({ count: sql<number>`count(*)` }).from(schema.kelas).where(eq(schema.kelas.mustahiqId, userId));
-      const kelasCount = kelasCountResult[0]?.count || 0;
+      const asatidzList = await db.select().from(schema.asatidz).where(eq(schema.asatidz.userId, userId));
+      const asatidzId = asatidzList.length > 0 ? asatidzList[0].id : null;
       
-      const jadwalCountResult = await db.select({ count: sql<number>`count(*)` }).from(schema.jadwalPelajaran).where(eq(schema.jadwalPelajaran.pengajarId, userId));
-      const jadwalCount = jadwalCountResult[0]?.count || 0;
+      let kelasCount = 0;
+      let jadwalCount = 0;
+      let penilaianCount = 0;
+
+      if (asatidzId) {
+        const kelasCountResult = await db.select({ count: sql<number>`count(*)` }).from(schema.kelas).where(eq(schema.kelas.mustahiqId, asatidzId));
+        kelasCount = kelasCountResult[0]?.count || 0;
+        
+        const jadwalCountResult = await db.select({ count: sql<number>`count(*)` }).from(schema.jadwalPelajaran).where(eq(schema.jadwalPelajaran.pengajarId, asatidzId));
+        jadwalCount = jadwalCountResult[0]?.count || 0;
+
+        const kelasList = await db.select().from(schema.kelas).where(eq(schema.kelas.mustahiqId, asatidzId));
+        if (kelasList.length > 0) {
+            const kelasIds = kelasList.map(k => k.id);
+            const { inArray } = await import('drizzle-orm');
+            const rapotList = await db.select().from(schema.rapotSemester).where(inArray(schema.rapotSemester.kelasId, kelasIds));
+            if (rapotList.length > 0) {
+               const rapotIds = rapotList.map(r => r.id);
+               const penilaianResult = await db.select({ count: sql<number>`count(*)` }).from(schema.rapotNilai).where(inArray(schema.rapotNilai.rapotId, rapotIds));
+               penilaianCount = penilaianResult[0]?.count || 0;
+            }
+        }
+      }
 
       summary = {
         kelas: kelasCount,
         jadwal: jadwalCount,
         tugas: 0, // Tugas not implemented in schema yet
-        penilaian: 0, // Penilaian needs specific queries
+        penilaian: penilaianCount,
       };
 
       // Fetch actual schedule
-      schedule = await db.select().from(schema.jadwalPelajaran).where(eq(schema.jadwalPelajaran.pengajarId, userId)).limit(5);
+      schedule = asatidzId ? await db.select().from(schema.jadwalPelajaran).where(eq(schema.jadwalPelajaran.pengajarId, asatidzId)).limit(5) : [];
 
     } else if (role === 'mufatish') {
       const asatidzList = await db.select().from(schema.asatidz).where(eq(schema.asatidz.userId, userId));
@@ -186,9 +211,9 @@ export const getRekapPresensi = async (c: Context) => {
       totalAlpha += r.tanpaIzinCount || 0;
     }
     
-    // Mocking Total Hadir based on a simulated number of active days (e.g., 20 days per month)
-    const simulatedActiveDays = 20 * rapotList.length; 
-    totalHadir = simulatedActiveDays - (totalIzin + totalAlpha);
+    // Menggunakan standar hari efektif per semester (130 hari)
+    const HARI_EFEKTIF_PER_SANTRI = 130; 
+    totalHadir = (HARI_EFEKTIF_PER_SANTRI * rapotList.length) - (totalIzin + totalAlpha);
 
     return c.json({ success: true, data: { 
       totalHadir: totalHadir > 0 ? totalHadir : 0, 
@@ -225,9 +250,8 @@ export const getPenilaianKelas = async (c: Context) => {
 
       let nilai = null;
       if (rapot.length > 0) {
-         // Assuming mapel comes as kitab name or id. For simplicity, we just lookup any rapotNilai entry.
          const rn = await db.select().from(schema.rapotNilai)
-           .where(eq(schema.rapotNilai.rapotId, rapot[0].id))
+           .where(and(eq(schema.rapotNilai.rapotId, rapot[0].id), eq(schema.rapotNilai.kitabId, mapel)))
            .limit(1);
          if (rn.length > 0) {
             if (kuartal === '1') nilai = rn[0].kuartal1Score;
@@ -257,6 +281,10 @@ export const savePenilaianKuartal = async (c: Context) => {
     const body = await c.req.json();
     // body: { classId, mapel, kuartal, scores: [{santri_id, nilai}] }
     
+    let activeYear = '2026-2027';
+    const setting = await db.select().from(schema.settings).where(eq(schema.settings.id, 'global')).get();
+    if (setting) activeYear = setting.activeAcademicYear;
+
     for (const score of body.scores) {
       let rapot = await db.select().from(schema.rapotSemester)
         .where(and(eq(schema.rapotSemester.santriId, score.santri_id), eq(schema.rapotSemester.kelasId, body.classId)))
@@ -270,7 +298,7 @@ export const savePenilaianKuartal = async (c: Context) => {
           santriId: score.santri_id,
           kelasId: body.classId,
           semester: '1',
-          academicYear: new Date().getFullYear().toString(),
+          academicYear: activeYear,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         });
@@ -278,8 +306,7 @@ export const savePenilaianKuartal = async (c: Context) => {
         rapotId = rapot[0].id;
       }
 
-      // Mocking kitabId mapping for simplicity
-      const kitabId = 'kitab-id-placeholder'; 
+      const kitabId = body.mapelId; 
 
       let rn = await db.select().from(schema.rapotNilai)
         .where(and(eq(schema.rapotNilai.rapotId, rapotId), eq(schema.rapotNilai.kitabId, kitabId)))
@@ -340,10 +367,18 @@ export const getStatusKelas = async (c: Context) => {
         }
       }
 
+      let waliName = 'Belum Ditentukan';
+      if (k.mustahiqId) {
+         const mustahiq = await db.select().from(schema.asatidz).where(eq(schema.asatidz.id, k.mustahiqId)).limit(1);
+         if (mustahiq.length > 0) {
+            waliName = mustahiq[0].name;
+         }
+      }
+
       data.push({
         id: k.id,
         name: `Kelas ${k.bagian}`,
-        wali: 'Ust. Fulan', // Still mocking wali mapping for now
+        wali: waliName, 
         totalSantri,
         progress,
         status

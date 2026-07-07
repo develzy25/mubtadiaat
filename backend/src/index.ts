@@ -43,17 +43,11 @@ app.post('/api/auth/mobile-login', async (c) => {
     const body = await c.req.json();
     const db = drizzle(c.env.DB, { schema });
     
-    // Find user's email based on the username
-    const user = await db.select().from(schema.users).where(eq(schema.users.username, body.username)).get();
-    if (!user) {
-      return c.json({ error: "Invalid credentials" }, 401);
-    }
-
     const headers = new Headers(c.req.raw.headers);
-    // Use the native signInEmail with the mapped email
-    const res = await auth.api.signInEmail({
+    // Use the native signInUsername provided by the username plugin
+    const res = await auth.api.signInUsername({
       body: {
-        email: user.email,
+        username: body.username,
         password: body.password
       },
       headers: headers

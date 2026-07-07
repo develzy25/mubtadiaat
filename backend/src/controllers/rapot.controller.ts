@@ -6,7 +6,11 @@ import { eq, and, inArray } from 'drizzle-orm';
 export const getRapotGrid = async (c: Context) => {
   const classId = c.req.param('classId');
   const semester = c.req.query('semester') || '1';
-  const year = c.req.query('year') || '2026-2027';
+  let year = c.req.query('year');
+  if (!year) {
+    const setting = await db.select().from(schema.settings).where(eq(schema.settings.id, 'global')).get();
+    year = setting?.activeAcademicYear || '2026-2027';
+  }
 
   if (!classId) return c.json({ success: false, message: 'Class ID required' }, 400);
 
@@ -80,7 +84,12 @@ export const getRapotGrid = async (c: Context) => {
 
 export const saveRapotBatch = async (c: Context) => {
   const body = await c.req.json();
-  const { classId, semester, academicYear, data } = body;
+  let { classId, semester, academicYear, data } = body;
+
+  if (!academicYear) {
+    const setting = await db.select().from(schema.settings).where(eq(schema.settings.id, 'global')).get();
+    academicYear = setting?.activeAcademicYear || '2026-2027';
+  }
 
   if (!classId || !data || !Array.isArray(data)) {
     return c.json({ success: false, message: 'Invalid payload' }, 400);
@@ -157,7 +166,11 @@ export const saveRapotBatch = async (c: Context) => {
 export const fetchNilaiAm = async (c: Context) => {
   const classId = c.req.param('classId');
   const semester = c.req.query('semester') || '1';
-  const year = c.req.query('year') || '2026-2027';
+  let year = c.req.query('year');
+  if (!year) {
+    const setting = await db.select().from(schema.settings).where(eq(schema.settings.id, 'global')).get();
+    year = setting?.activeAcademicYear || '2026-2027';
+  }
 
   if (!classId) return c.json({ success: false, message: 'Class ID required' }, 400);
 
@@ -205,7 +218,11 @@ export const fetchNilaiAm = async (c: Context) => {
 
 export const fetchRekap = async (c: Context) => {
   const santriId = c.req.param('santriId');
-  const year = c.req.query('year') || '2026-2027';
+  let year = c.req.query('year');
+  if (!year) {
+    const setting = await db.select().from(schema.settings).where(eq(schema.settings.id, 'global')).get();
+    year = setting?.activeAcademicYear || '2026-2027';
+  }
 
   if (!santriId) return c.json({ success: false, message: 'Santri ID required' }, 400);
 
@@ -267,8 +284,13 @@ export const fetchRekap = async (c: Context) => {
 
 export const finalizeKelas = async (c: Context) => {
   const body = await c.req.json();
-  const { classId, semester, academicYear } = body;
+  let { classId, semester, academicYear } = body;
   
+  if (!academicYear) {
+    const setting = await db.select().from(schema.settings).where(eq(schema.settings.id, 'global')).get();
+    academicYear = setting?.activeAcademicYear || '2026-2027';
+  }
+
   if (!classId) return c.json({ success: false, message: 'Class ID required' }, 400);
 
   // Set all rapot for this class to finalized

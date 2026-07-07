@@ -20,6 +20,20 @@ export class AdminRepository {
     return await db.select().from(schema.auditLogs).orderBy(desc(schema.auditLogs.createdAt));
   }
 
+  // Settings
+  async getSettings() {
+    let setting = await db.select().from(schema.settings).where(eq(schema.settings.id, 'global')).get();
+    if (!setting) {
+      await db.insert(schema.settings).values({ id: 'global', activeAcademicYear: '2026-2027' }).run();
+      setting = await db.select().from(schema.settings).where(eq(schema.settings.id, 'global')).get();
+    }
+    return setting;
+  }
+
+  async updateSettings(activeAcademicYear: string) {
+    await db.update(schema.settings).set({ activeAcademicYear }).where(eq(schema.settings.id, 'global')).run();
+  }
+
   // Users
   async getUsers() {
     return await db.select().from(schema.users).orderBy(desc(schema.users.createdAt));

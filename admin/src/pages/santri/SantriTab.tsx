@@ -516,22 +516,21 @@ export const SantriTab = () => {
                   </Td>
                   <Td>
                     <div className="flex items-center justify-end gap-2">
-                      <select
+                      <PremiumSelect
                         value=""
                         onChange={(e: any) => { 
                           if(e.target.value) {
                             handleStatusChange(santri, e.target.value);
-                            e.target.value = ""; // Reset visually
                           }
                         }}
-                        className="bg-white border border-slate-200 text-[10px] font-bold rounded-lg px-2 py-1.5 text-slate-700 outline-hidden hover:border-blue-400 hover:bg-blue-50 transition-colors w-28 cursor-pointer shadow-sm"
+                        className="bg-white border-slate-200 text-[10px] font-bold rounded-lg px-2 py-1.5 text-slate-700 hover:border-blue-400 hover:bg-blue-50 w-28 min-h-[32px] h-8 shadow-none"
                       >
                         <option value="">Mutasi...</option>
                         <option value="ALUMNI">Jadikan Alumni</option>
                         <option value="KHIDMAH">Masa Khidmah</option>
                         <option value="CUTI">Mutasi Cuti</option>
                         <option value="BOYONG">Mutasi Boyong</option>
-                      </select>
+                      </PremiumSelect>
                       
                       <button
                         onClick={() => openEditModal(santri)}

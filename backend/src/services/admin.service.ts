@@ -21,6 +21,14 @@ export class AdminService {
     };
   }
 
+  async getSettings() {
+    return await adminRepository.getSettings();
+  }
+
+  async updateSettings(activeAcademicYear: string) {
+    await adminRepository.updateSettings(activeAcademicYear);
+  }
+
   async getLogs() {
     return await adminRepository.getAllAuditLogs();
   }
@@ -41,23 +49,90 @@ export class AdminService {
     await adminRepository.deleteUser(id);
   }
 
-  async seedUsers(auth: any) {
-    await adminRepository.clearAuthTables();
-    const accountsToCreate = [
-      { name: 'Administrator', email: 'admin@mubtadiaat.com', role: 1, username: 'admin' }
-    ];
-    const results = [];
-    for (const acc of accountsToCreate) {
-      const res = await auth.api.signUpEmail({
-        body: { email: acc.email, password: 'mubtadiaat123', name: acc.name },
-        asResponse: false
-      });
-      if (res?.user?.id) {
-        await adminRepository.updateUserRoleAndUsername(res.user.id, acc.role, acc.username);
-        results.push({ email: acc.email, password: 'mubtadiaat123', role: acc.role, username: acc.username });
-      }
+  async seedFullData(auth: any, db: any) {
+    // 1. Wipe database (clear all relevant tables)
+    const tablesToClear = ['users', 'accounts', 'sessions', 'settings', 'blok', 'kamar', 'jenjang', 'tingkat', 'kelas', 'kitab', 'asatidz', 'santri', 'jadwalPelajaran', 'rapotSemester'];
+    for (const table of tablesToClear) {
+      // @ts-ignore
+      await db.delete((require('../db/schema')[table])).run();
     }
-    return results;
+
+    // 2. Insert Settings
+    // @ts-ignore
+    await db.insert(require('../db/schema').settings).values({ id: 'global', activeAcademicYear: '2026-2027' }).run();
+
+    // 3. Create Admin
+    const res = await auth.api.signUpUsername({
+      body: { username: 'admin', password: 'mubtadiaat123', name: 'Administrator' },
+      asResponse: false
+    });
+    if (res?.user?.id) {
+      await adminRepository.updateUserRoleAndUsername(res.user.id, 1, 'admin');
+    }
+
+    // 4. Create Asatidz (Mundzir, Mufatish, Mustahiq)
+    const asatidzList = [
+      { id: 'ast_1', name: 'Ust. Mundzir', nip: '111', role: 'Mundzir' },
+      { id: 'ast_2', name: 'Ust. Mufatish', nip: '222', role: 'Mufatish' },
+      { id: 'ast_3', name: 'Ust. Mustahiq', nip: '333', role: 'Mustahiq' }
+    ];
+    // @ts-ignore
+    await db.insert(require('../db/schema').asatidz).values(asatidzList).run();
+
+    // Generate accounts for them
+    await this.generateAccountAsatidz('ast_1', auth); // Mundzir
+    await this.generateAccountAsatidz('ast_2', auth); // Mufatish
+    await this.generateAccountAsatidz('ast_3', auth); // Mustahiq
+
+    // 5. Blok & Kamar
+    // @ts-ignore
+    await db.insert(require('../db/schema').blok).values([{ id: 'blk_1', name: 'Blok A' }]).run();
+    // @ts-ignore
+    await db.insert(require('../db/schema').kamar).values([{ id: 'kmr_1', name: 'A.01', blokId: 'blk_1' }]).run();
+
+    // 6. Jenjang, Tingkat, Kelas
+    // @ts-ignore
+    await db.insert(require('../db/schema').jenjang).values([{ id: 'jjg_1', name: 'Ibtidaiyyah' }, { id: 'jjg_2', name: 'Tsanawiyah' }]).run();
+    
+    // @ts-ignore
+    await db.insert(require('../db/schema').tingkat).values([
+      { id: 'tkt_1', name: 'I', jenjangId: 'jjg_1' },
+      { id: 'tkt_2', name: 'II', jenjangId: 'jjg_1' },
+      { id: 'tkt_3', name: 'I', jenjangId: 'jjg_2' }
+    ]).run();
+
+    // @ts-ignore
+    await db.insert(require('../db/schema').kelas).values([
+      { id: 'kls_1', bagian: 'I-A', lokal: 'Gedung A', tingkatId: 'tkt_1', mustahiqId: 'ast_3' },
+      { id: 'kls_2', bagian: 'I-A Ts', lokal: 'Gedung B', tingkatId: 'tkt_3', mustahiqId: 'ast_3' }
+    ]).run();
+
+    // 7. Kitab (with Fan Ilmu)
+    const fanIlmu = ['التفسير', 'الحديث', 'التوحيد', 'الفقه', 'الأخلاق', 'النحو', 'التاريخ'];
+    const kitabList = fanIlmu.map((fan, idx) => ({
+      id: `ktb_${idx}`,
+      name: `Kitab ${fan}`,
+      fanIlmu: fan,
+      tingkatId: idx % 2 === 0 ? 'tkt_1' : 'tkt_3'
+    }));
+    // @ts-ignore
+    await db.insert(require('../db/schema').kitab).values(kitabList).run();
+
+    // 8. Santri
+    const santriList = [];
+    for (let i = 1; i <= 20; i++) {
+      santriList.push({
+        id: `str_${i}`,
+        noStambuk: `STB${2026000 + i}`,
+        name: `Santriwati ${i}`,
+        kelasId: i <= 10 ? 'kls_1' : 'kls_2',
+        kamarId: 'kmr_1'
+      });
+    }
+    // @ts-ignore
+    await db.insert(require('../db/schema').santri).values(santriList).run();
+
+    return { message: "Database wiped and seeded with dummy data successfully!" };
   }
 
   async generateAccountAsatidz(id: string, auth: any) {
@@ -74,21 +149,22 @@ export class AdminService {
     };
     const roleId = roleMapping[asatidz.role] || 4;
     
-    // Clean name: lower case, remove non-alphanumeric, max 10 chars
-    const cleanName = asatidz.name.split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
-    const prefix = (asatidz.role || 'user').toLowerCase().replace(/[^a-z0-9]/g, '');
-    const username = `${prefix}_${cleanName}${Math.floor(Math.random() * 100)}`;
-    const email = `${username}@mubtadiaat.id`;
+    // Clean name: use first and middle name separated by dot
+    const nameParts = asatidz.name.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(Boolean);
+    let username = nameParts.length >= 2 
+      ? `${nameParts[0]}.${nameParts[1]}`
+      : (nameParts.length === 1 ? nameParts[0] : `user${Math.floor(Math.random() * 100)}`);
 
-    const res = await auth.api.signUpEmail({
-      body: { email, password: 'mubtadiaat123', name: asatidz.name },
+
+    const res = await auth.api.signUpUsername({
+      body: { username, password: 'mubtadiaat123', name: asatidz.name },
       asResponse: false
     });
 
     if (res?.user?.id) {
       await adminRepository.updateUserRoleAndUsername(res.user.id, roleId, username);
       await adminRepository.update('asatidz', id, { userId: res.user.id });
-      return { success: true, username, email, password: 'mubtadiaat123' };
+      return { success: true, username, password: 'mubtadiaat123' };
     }
     throw new Error("Gagal membuat akun");
   }

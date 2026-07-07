@@ -43,6 +43,7 @@ export const AdminUsersPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
+  const [filterRole, setFilterRole] = useState<number | 'ALL'>('ALL');
 
   // Modal states
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -106,8 +107,11 @@ export const AdminUsersPage = () => {
     const selected = alumniList.find(s => s.id === alumniId);
     if (selected) {
       setFormName(selected.name);
-      // Generate clean email
-      const username = selected.name.toLowerCase().replace(/[^a-z0-9]/g, '.');
+      // Generate clean username (first and middle name)
+      const nameParts = selected.name.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(Boolean);
+      const username = nameParts.length >= 2 
+        ? `${nameParts[0]}.${nameParts[1]}`
+        : (nameParts.length === 1 ? nameParts[0] : `user${Math.floor(Math.random() * 100)}`);
       setFormUsername(username);
     }
   };
@@ -255,13 +259,25 @@ export const AdminUsersPage = () => {
         </div>
         
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end relative">
+          <PremiumSelect
+            value={filterRole}
+            onChange={(e) => setFilterRole(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
+            className="bg-white border-slate-200 text-slate-700 text-sm h-10 px-3 pr-8 rounded-xl"
+          >
+            <option value="ALL">Semua Role</option>
+            <option value={1}>Admin</option>
+            <option value={2}>Mundzir</option>
+            <option value={3}>Mufatish</option>
+            <option value={4}>Mustahiq</option>
+          </PremiumSelect>
+
           <DataExportImport 
             onDownloadTemplate={handleDownloadTemplate}
             onExportData={handleExportData}
             onImportData={handleImportData}
             isLoading={loading}
           />
-          <PremiumButton 
+          <PremiumButton  
             onClick={openAddModal}
             variant="primary"
             leftIcon={<Plus className="w-5 h-5" />}
@@ -298,7 +314,10 @@ export const AdminUsersPage = () => {
                   </Tr>
                 </Thead>
                 <Tbody>
-                  {users.filter(u => u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase())).map(user => (
+                  {users.filter(u => {
+                    if (filterRole !== 'ALL' && u.role !== filterRole) return false;
+                    return u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase());
+                  }).map(user => (
                     <Tr key={user.id}>
                       <Td>
                         <div className="font-bold text-slate-800">{user.name}</div>

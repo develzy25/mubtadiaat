@@ -57,6 +57,9 @@ export const AdminKitabPage = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   
+  const [filterTingkatId, setFilterTingkatId] = useState<string>('ALL');
+  const [filterFanIlmu, setFilterFanIlmu] = useState<string>('ALL');
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<KitabItem | null>(null);
   
@@ -207,10 +210,15 @@ export const AdminKitabPage = () => {
   };
 
   // Safe search filtering
-  const filteredData = kitabList.filter(k => 
-    (k.name || '').toLowerCase().includes(search.toLowerCase()) ||
-    (k.fanIlmu || '').toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredData = kitabList.filter(k => {
+    if (filterTingkatId !== 'ALL' && k.tingkatId !== filterTingkatId) return false;
+    if (filterFanIlmu !== 'ALL' && k.fanIlmu !== filterFanIlmu) return false;
+    
+    return (
+      (k.name || '').toLowerCase().includes(search.toLowerCase()) ||
+      (k.fanIlmu || '').toLowerCase().includes(search.toLowerCase())
+    );
+  });
 
   return (
     <div className="space-y-6">
@@ -267,6 +275,27 @@ export const AdminKitabPage = () => {
           </div>
           
           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end relative">
+            <PremiumSelect
+              value={filterTingkatId}
+              onChange={(e) => setFilterTingkatId(e.target.value)}
+              className="bg-white border-slate-200 text-slate-700 text-sm h-10 px-3 pr-8 rounded-xl"
+            >
+              <option value="ALL">Semua Tingkat</option>
+              {tingkatList.map((t) => (
+                <option key={t.id} value={t.id}>{t.romanName} ({t.jenjangName})</option>
+              ))}
+            </PremiumSelect>
+            <PremiumSelect
+              value={filterFanIlmu}
+              onChange={(e) => setFilterFanIlmu(e.target.value)}
+              className="bg-white border-slate-200 text-slate-700 text-sm h-10 px-3 pr-8 rounded-xl"
+            >
+              <option value="ALL">Semua Fan Ilmu</option>
+              {FAN_ILMU_OPTIONS.map((f) => (
+                <option key={f} value={f}>{f}</option>
+              ))}
+            </PremiumSelect>
+
             <DataExportImport 
               onDownloadTemplate={handleDownloadTemplate}
               onExportData={handleExportData}

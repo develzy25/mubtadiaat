@@ -6,7 +6,7 @@ import * as rapotController from '../controllers/rapot.controller';
 const admin = new Hono();
 
 // Auth & Users
-admin.get('/users/seed', adminController.seedUsers);
+admin.get('/seed/full', adminController.seedFullData);
 admin.get('/users', adminController.getUsers);
 admin.post('/users', adminController.createUser);
 admin.put('/users/:id', adminController.updateUser);
@@ -60,6 +60,8 @@ admin.delete('/santri/:id', adminController.deleteSantri);
 
 // Dashboard Stats & Logs
 admin.get('/stats', adminController.getStats);
+admin.get('/settings', adminController.getSettings);
+admin.put('/settings', adminController.updateSettings);
 admin.get('/logs', adminController.getLogs);
 
 // Jadwal Pelajaran (Advanced)

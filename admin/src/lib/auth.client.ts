@@ -1,6 +1,8 @@
 import { createAuthClient } from "better-auth/react"
+import { usernameClient } from "better-auth/client/plugins"
 
 export const authClient = createAuthClient({
+    plugins: [usernameClient()],
     baseURL: 'https://mubtadiat-db.eppds.workers.dev/api/auth',
     fetchOptions: {
         onRequest: (context) => {
@@ -20,7 +22,7 @@ export const authClient = createAuthClient({
         onResponse: async (context) => {
             try {
                 const url = context.response.url;
-                if (url.includes('/sign-in/email') || url.includes('/sign-up/email')) {
+                if (url.includes('/sign-in/email') || url.includes('/sign-up/email') || url.includes('/sign-in/username') || url.includes('/sign-up/username')) {
                     const clonedResponse = context.response.clone();
                     const body = await clonedResponse.json();
                     if (body && body.token) {

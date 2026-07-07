@@ -49,6 +49,9 @@ export const AdminKelasRombelPage = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   
+  const [filterJenjangId, setFilterJenjangId] = useState<string>('ALL');
+  const [filterTingkatId, setFilterTingkatId] = useState<string>('ALL');
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<KelasItem | null>(null);
   
@@ -236,13 +239,18 @@ export const AdminKelasRombelPage = () => {
     return asatidzList.find(a => a.id === id)?.name || 'Unknown';
   };
 
-  const filteredData = classList.filter(c => 
-    (c.jenjangName || '').toLowerCase().includes(search.toLowerCase()) ||
-    (c.tingkatName || '').toLowerCase().includes(search.toLowerCase()) ||
-    (c.bagian || '').toLowerCase().includes(search.toLowerCase()) ||
-    (c.lokal || '').toLowerCase().includes(search.toLowerCase()) ||
-    (c.mustahiqName || '').toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredData = classList.filter(c => {
+    if (filterJenjangId !== 'ALL' && c.jenjangId !== filterJenjangId) return false;
+    if (filterTingkatId !== 'ALL' && c.tingkatId !== filterTingkatId) return false;
+    
+    return (
+      (c.jenjangName || '').toLowerCase().includes(search.toLowerCase()) ||
+      (c.tingkatName || '').toLowerCase().includes(search.toLowerCase()) ||
+      (c.bagian || '').toLowerCase().includes(search.toLowerCase()) ||
+      (c.lokal || '').toLowerCase().includes(search.toLowerCase()) ||
+      (c.mustahiqName || '').toLowerCase().includes(search.toLowerCase())
+    );
+  });
 
   return (
     <div className="space-y-6">
@@ -299,6 +307,32 @@ export const AdminKelasRombelPage = () => {
           </div>
           
           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end relative">
+            <PremiumSelect
+              value={filterJenjangId}
+              onChange={(e) => {
+                setFilterJenjangId(e.target.value);
+                setFilterTingkatId('ALL');
+              }}
+              className="bg-white border-slate-200 text-slate-700 text-sm h-10 px-3 pr-8 rounded-xl"
+            >
+              <option value="ALL">Semua Jenjang</option>
+              {jenjangList.map((j) => (
+                <option key={j.id} value={j.id}>{j.name}</option>
+              ))}
+            </PremiumSelect>
+            <PremiumSelect
+              value={filterTingkatId}
+              onChange={(e) => setFilterTingkatId(e.target.value)}
+              className="bg-white border-slate-200 text-slate-700 text-sm h-10 px-3 pr-8 rounded-xl"
+            >
+              <option value="ALL">Semua Tingkat</option>
+              {tingkatList
+                .filter(t => filterJenjangId === 'ALL' || t.jenjangId === filterJenjangId)
+                .map((t) => (
+                <option key={t.id} value={t.id}>{t.romanName} ({t.jenjangName})</option>
+              ))}
+            </PremiumSelect>
+
             <DataExportImport 
               onDownloadTemplate={handleDownloadTemplate}
               onExportData={handleExportData}

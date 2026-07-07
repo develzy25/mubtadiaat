@@ -6,6 +6,17 @@ export const getStats = async (c: Context) => {
   return c.json({ success: true, data });
 };
 
+export const getSettings = async (c: Context) => {
+  const settings = await adminService.getSettings();
+  return c.json({ success: true, data: settings });
+};
+
+export const updateSettings = async (c: Context) => {
+  const body = await c.req.json();
+  await adminService.updateSettings(body.activeAcademicYear);
+  return c.json({ success: true });
+};
+
 export const getLogs = async (c: Context) => {
   const logs = await adminService.getLogs();
   return c.json({ success: true, data: logs });
@@ -36,12 +47,15 @@ export const resetUserPassword = async (c: Context) => {
   // Mocked for now (was mocked in original too)
   return c.json({ success: true });
 };
-export const seedUsers = async (c: Context) => {
+export const seedFullData = async (c: Context) => {
   try {
     const { getAuth } = await import('../lib/auth.js');
     const auth = getAuth(c.env, c.req.url);
-    const results = await adminService.seedUsers(auth);
-    return c.json({ success: true, message: 'Database seeded', data: results });
+    const { drizzle } = await import('drizzle-orm/d1');
+    const schema = await import('../db/schema.js');
+    const db = drizzle(c.env.DB, { schema });
+    const results = await adminService.seedFullData(auth, db);
+    return c.json({ success: true, message: 'Database wiped and seeded', data: results });
   } catch (error: any) {
     return c.json({ success: false, error: error.message });
   }

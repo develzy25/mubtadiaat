@@ -1,11 +1,16 @@
-import { Search, Bell, UserCircle, Calendar, Wifi, WifiOff } from 'lucide-react';
+import { Search, Bell, UserCircle, Calendar, Wifi, WifiOff, BookOpen } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useSettingsStore } from '../stores/useSettingsStore';
 
 export function Topbar() {
   const [isOnline, setIsOnline] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
+  
+
+  const { activeAcademicYear, fetchSettings, updateAcademicYear, isLoading } = useSettingsStore();
 
   useEffect(() => {
+    fetchSettings();
     // Online/Offline detection
     setIsOnline(navigator.onLine);
     const handleOnline = () => setIsOnline(true);
@@ -45,6 +50,24 @@ export function Topbar() {
       </div>
 
       <div className="flex items-center gap-6 ml-auto">
+        {/* Info Box: Global Settings (Academic Year) */}
+        <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-xl relative group cursor-pointer transition-colors hover:bg-blue-100">
+          <BookOpen className="w-4 h-4 text-blue-600" />
+          <div className="flex flex-col">
+            <span className="text-[10px] font-bold text-blue-800 uppercase tracking-wider">Tahun Ajaran</span>
+            <select 
+              className="text-xs font-bold text-blue-900 bg-transparent outline-none cursor-pointer border-none p-0 focus:ring-0"
+              value={activeAcademicYear}
+              disabled={isLoading}
+              onChange={(e) => updateAcademicYear(e.target.value)}
+            >
+              <option value="2025-2026">2025-2026</option>
+              <option value="2026-2027">2026-2027</option>
+              <option value="2027-2028">2027-2028</option>
+            </select>
+          </div>
+        </div>
+
         {/* Info Box: Date & Time */}
         <div className="hidden lg:flex items-center gap-3 px-4 py-2 bg-slate-50 border border-slate-100 rounded-2xl">
           <Calendar className="w-4 h-4 text-slate-400" />

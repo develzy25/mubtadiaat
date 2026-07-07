@@ -51,7 +51,7 @@ export const getAuth = (
       usePlural: true,
     }),
     emailAndPassword: {
-      enabled: true, // We enable standard email/password login
+      enabled: false,
     },
     user: {
       additionalFields: {

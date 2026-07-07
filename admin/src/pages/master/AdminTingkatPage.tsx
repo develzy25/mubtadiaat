@@ -37,6 +37,7 @@ export const AdminTingkatPage = () => {
   
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [filterJenjangId, setFilterJenjangId] = useState<string>('ALL');
   
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<TingkatItem | null>(null);
@@ -239,11 +240,14 @@ export const AdminTingkatPage = () => {
     }
   };
 
-  const filteredData = tingkatList.filter(t => 
-    (t.jenjangName || '').toLowerCase().includes(search.toLowerCase()) ||
-    (t.romanName || '').toLowerCase().includes(search.toLowerCase()) ||
-    (t.targetNadzom || '').toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredData = tingkatList.filter(t => {
+    if (filterJenjangId !== 'ALL' && t.jenjangId !== filterJenjangId) return false;
+    return (
+      (t.jenjangName || '').toLowerCase().includes(search.toLowerCase()) ||
+      (t.romanName || '').toLowerCase().includes(search.toLowerCase()) ||
+      (t.targetNadzom || '').toLowerCase().includes(search.toLowerCase())
+    );
+  });
 
   return (
     <div className="space-y-6">
@@ -300,7 +304,18 @@ export const AdminTingkatPage = () => {
           </div>
           
           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end relative">
-            <DataExportImport 
+            <PremiumSelect
+              value={filterJenjangId}
+              onChange={(e) => setFilterJenjangId(e.target.value)}
+              className="bg-white border-slate-200 text-slate-700 text-sm h-10 px-3 pr-8 rounded-xl"
+            >
+              <option value="ALL">Semua Jenjang</option>
+              {jenjangList.map((j) => (
+                <option key={j.id} value={j.id}>{j.name}</option>
+              ))}
+            </PremiumSelect>
+
+            <DataExportImport  
               onDownloadTemplate={handleDownloadTemplate}
               onExportData={handleExportData}
               onImportData={handleImportData}

@@ -113,6 +113,8 @@ jobs:
       
       - name: Build Android APK
         working-directory: ./mobile
+        env:
+          EAS_NO_VCS: 1
         run: |
           npm ci
           eas build --platform android --profile production --local --output ../mubtadiaat-android.apk

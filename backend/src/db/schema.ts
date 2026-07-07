@@ -19,8 +19,7 @@ const authTimestampFields = {
 export const users = sqliteTable('users', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
-  email: text('email').unique().notNull(),
-  username: text('username').unique(),
+  username: text('username').unique().notNull(),
   emailVerified: integer('email_verified', { mode: 'boolean' }).notNull().default(false),
   image: text('image'),
   role: integer('role').default(4), // 1=Admin, 2=Mundzir, 3=Mufatish, 4=Mustahiq
@@ -58,6 +57,15 @@ export const verifications = sqliteTable('verifications', {
   value: text('value').notNull(),
   expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
   ...authTimestampFields,
+});
+
+// ==========================================
+// 1.5 SETTINGS GLOBAL
+// ==========================================
+export const settings = sqliteTable('settings', {
+  id: text('id').primaryKey(), // Usually just 'global'
+  activeAcademicYear: text('active_academic_year').notNull().default('2026-2027'),
+  ...timestampFields,
 });
 
 // ==========================================

@@ -339,7 +339,7 @@ export const AdminRapotPage = () => {
             >
               {classList.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.name}
+                  {c.jenjangName} - {c.tingkatName} {c.bagian}
                 </option>
               ))}
             </PremiumSelect>
