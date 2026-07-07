@@ -38,7 +38,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#09090B]">
+    <SafeAreaView className="flex-1 bg-[#09090B]" style={Platform.OS === 'web' ? { minHeight: '100vh', width: '100%' } : {}}>
       {/* Deep Space Dark Glassmorphism Abstract Background */}
       <View className="absolute top-[-10%] left-[-20%] w-[400px] h-[400px] bg-blue-600/10 rounded-full blur-[100px]" />
       <View className="absolute bottom-[-10%] right-[-20%] w-[350px] h-[350px] bg-indigo-600/10 rounded-full blur-[100px]" />
