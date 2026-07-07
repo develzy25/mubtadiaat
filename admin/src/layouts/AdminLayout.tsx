@@ -116,7 +116,7 @@ export const AdminLayout = () => {
           >
             <div className="w-12 h-12 rounded-2xl bg-linear-to-tr from-slate-800 to-slate-700 border border-slate-600 flex items-center justify-center p-2 shadow-[inset_0_2px_4px_rgba(255,255,255,0.1),0_4px_10px_rgba(0,0,0,0.3)]">
               <img 
-                src="/logo.png" 
+                src="./logo.png" 
                 alt="Logo" 
                 className="w-full h-full object-contain filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
               />

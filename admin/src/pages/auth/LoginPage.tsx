@@ -66,7 +66,7 @@ export const LoginPage = () => {
         <div className="text-center mb-5 sm:mb-6 flex flex-col items-center">
           <div className="w-24 h-24 sm:w-28 sm:h-28 neumorph rounded-full flex items-center justify-center p-3 mb-3 transition-transform hover:scale-105">
             <img 
-              src="/logo.png" 
+              src="./logo.png" 
               alt="Logo P3HM Lirboyo" 
               className="w-full h-full object-contain filter drop-shadow-[0_4px_6px_rgba(0,0,0,0.15)]"
             />
