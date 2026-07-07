@@ -43,16 +43,71 @@ app.post('/api/auth/mobile-login', async (c) => {
     const body = await c.req.json();
     const db = drizzle(c.env.DB, { schema });
     
-    const headers = new Headers(c.req.raw.headers);
-    // Use the native signInUsername provided by the username plugin
-    const res = await auth.api.signInUsername({
-      body: {
-        username: body.username,
-        password: body.password
-      },
-      headers: headers
+    // find user
+    const user = await db.query.users.findFirst({
+      where: eq(schema.users.username, body.username)
     });
-    return c.json({ user: res.user, session: { token: res.token } });
+    if (!user) return c.json({ error: "Invalid credentials" }, 401);
+
+    // find account
+    const account = await db.query.accounts.findFirst({
+      where: eq(schema.accounts.userId, user.id)
+    });
+    if (!account) return c.json({ error: "Invalid credentials" }, 401);
+
+    const { verifyPassword } = await import('better-auth/crypto');
+    const isValid = await verifyPassword({ hash: account.password!, password: body.password });
+    if (!isValid) return c.json({ error: "Invalid credentials" }, 401);
+
+    // use internal adapter to create session manually if API is broken
+    const ctx = await auth.$context;
+    const session = await ctx.internalAdapter.createSession(user.id, true);
+    
+    return c.json({ user, session: { token: session.token } });
+  } catch (err: any) {
+    console.error("Login error:", err);
+    return c.json({ error: err.message || "Invalid credentials" }, 401);
+  }
+});
+
+app.post('/api/auth/sign-in/username', async (c) => {
+  console.log("CUSTOM SIGN-IN USERNAME REQUEST");
+  const auth = getAuth(c.env, c.req.url, c.req.header('origin'));
+  try {
+    const body = await c.req.json();
+    const db = drizzle(c.env.DB, { schema });
+    
+    // find user
+    const user = await db.query.users.findFirst({
+      where: eq(schema.users.username, body.username)
+    });
+    if (!user) return c.json({ error: "Invalid credentials" }, 401);
+
+    // find account
+    const account = await db.query.accounts.findFirst({
+      where: eq(schema.accounts.userId, user.id)
+    });
+    if (!account) return c.json({ error: "Invalid credentials" }, 401);
+
+    const { verifyPassword } = await import('better-auth/crypto');
+    const isValid = await verifyPassword({ hash: account.password!, password: body.password });
+    if (!isValid) return c.json({ error: "Invalid credentials" }, 401);
+
+    const ctx = await auth.$context;
+    const session = await ctx.internalAdapter.createSession(user.id, true);
+
+    // create set-cookie header
+    const reqOrigin = c.req.header('origin') || c.env.BETTER_AUTH_URL;
+    const isLocal = reqOrigin.includes('localhost');
+    const domain = isLocal ? undefined : new URL(reqOrigin).hostname;
+    
+    c.header('Set-Cookie', `better-auth.session_token=${session.token}; Path=/; HttpOnly; SameSite=Lax${domain ? `; Domain=${domain}; Secure` : ''}`);
+    
+    return c.json({
+      user,
+      session,
+      token: session.token,
+    });
   } catch (err: any) {
     console.error("Login error:", err);
     return c.json({ error: err.message || "Invalid credentials" }, 401);
@@ -87,3 +142,4 @@ export default {
     return app.fetch(request, env, ctx);
   }
 };
+

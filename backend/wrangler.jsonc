@@ -16,8 +16,8 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "mubtadiat-db-v2",
-      "database_id": "8d1ef660-9397-4436-8d96-e82e105644fd",
+      "database_name": "mubtadiat-db",
+      "database_id": "7357d2e3-c603-4c69-ac2e-89e66bc7e79d",
       "migrations_dir": "./migrations"
     }
   ],

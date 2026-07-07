@@ -24,7 +24,7 @@ function createWindow() {
   // In production, load the built index.html
   // In development, you could load the Vite dev server URL
   if (app.isPackaged) {
-    win.loadFile(path.join(__dirname, '../dist/index.html'));
+    win.loadURL('https://mubtadiaat.pages.dev');
   } else {
     // Assuming Vite runs on port 5173
     win.loadURL('http://localhost:5173');

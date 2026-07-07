@@ -51,7 +51,7 @@ export const getAuth = (
       usePlural: true,
     }),
     emailAndPassword: {
-      enabled: false,
+      enabled: true,
     },
     user: {
       additionalFields: {

@@ -1,6 +1,8 @@
 import { adminRepository } from '../repositories/admin.repository';
 // @ts-ignore
 import { v4 as uuidv4 } from 'uuid';
+import { db } from '../db/index';
+import * as schema from '../db/schema';
 
 export class AdminService {
   async getDashboardStats() {
@@ -53,22 +55,17 @@ export class AdminService {
     // 1. Wipe database (clear all relevant tables)
     const tablesToClear = ['users', 'accounts', 'sessions', 'settings', 'blok', 'kamar', 'jenjang', 'tingkat', 'kelas', 'kitab', 'asatidz', 'santri', 'jadwalPelajaran', 'rapotSemester'];
     for (const table of tablesToClear) {
-      // @ts-ignore
-      await db.delete((require('../db/schema')[table])).run();
+      await db.delete((schema as any)[table]).run();
     }
 
     // 2. Insert Settings
-    // @ts-ignore
-    await db.insert(require('../db/schema').settings).values({ id: 'global', activeAcademicYear: '2026-2027' }).run();
+    await db.insert(schema.settings).values({ id: 'global', activeAcademicYear: '2026-2027' }).run();
 
-    // 3. Create Admin
-    const res = await auth.api.signUpUsername({
-      body: { username: 'admin', password: 'mubtadiaat123', name: 'Administrator' },
-      asResponse: false
-    });
-    if (res?.user?.id) {
-      await adminRepository.updateUserRoleAndUsername(res.user.id, 1, 'admin');
-    }
+    const adminId = uuidv4();
+    const adminPasswordHash = await (await import('better-auth/crypto')).hashPassword('mubtadiaat123');
+    await db.insert(schema.users).values({ id: adminId, username: 'admin', name: 'Administrator', role: 1 }).run();
+    await db.insert(schema.accounts).values({ id: uuidv4(), userId: adminId, accountId: 'admin', providerId: 'credential', password: adminPasswordHash }).run();
+
 
     // 4. Create Asatidz (Mundzir, Mufatish, Mustahiq)
     const asatidzList = [
@@ -76,8 +73,7 @@ export class AdminService {
       { id: 'ast_2', name: 'Ust. Mufatish', nip: '222', role: 'Mufatish' },
       { id: 'ast_3', name: 'Ust. Mustahiq', nip: '333', role: 'Mustahiq' }
     ];
-    // @ts-ignore
-    await db.insert(require('../db/schema').asatidz).values(asatidzList).run();
+    await db.insert(schema.asatidz).values(asatidzList).run();
 
     // Generate accounts for them
     await this.generateAccountAsatidz('ast_1', auth); // Mundzir
@@ -85,24 +81,19 @@ export class AdminService {
     await this.generateAccountAsatidz('ast_3', auth); // Mustahiq
 
     // 5. Blok & Kamar
-    // @ts-ignore
-    await db.insert(require('../db/schema').blok).values([{ id: 'blk_1', name: 'Blok A' }]).run();
-    // @ts-ignore
-    await db.insert(require('../db/schema').kamar).values([{ id: 'kmr_1', name: 'A.01', blokId: 'blk_1' }]).run();
+    await db.insert(schema.blok).values([{ id: 'blk_1', name: 'Blok A' }]).run();
+    await db.insert(schema.kamar).values([{ id: 'kmr_1', name: 'A.01', blokId: 'blk_1' }]).run();
 
     // 6. Jenjang, Tingkat, Kelas
-    // @ts-ignore
-    await db.insert(require('../db/schema').jenjang).values([{ id: 'jjg_1', name: 'Ibtidaiyyah' }, { id: 'jjg_2', name: 'Tsanawiyah' }]).run();
+    await db.insert(schema.jenjang).values([{ id: 'jjg_1', name: 'Ibtidaiyyah' }, { id: 'jjg_2', name: 'Tsanawiyah' }]).run();
     
-    // @ts-ignore
-    await db.insert(require('../db/schema').tingkat).values([
+    await db.insert(schema.tingkat).values([
       { id: 'tkt_1', name: 'I', jenjangId: 'jjg_1' },
       { id: 'tkt_2', name: 'II', jenjangId: 'jjg_1' },
       { id: 'tkt_3', name: 'I', jenjangId: 'jjg_2' }
     ]).run();
 
-    // @ts-ignore
-    await db.insert(require('../db/schema').kelas).values([
+    await db.insert(schema.kelas).values([
       { id: 'kls_1', bagian: 'I-A', lokal: 'Gedung A', tingkatId: 'tkt_1', mustahiqId: 'ast_3' },
       { id: 'kls_2', bagian: 'I-A Ts', lokal: 'Gedung B', tingkatId: 'tkt_3', mustahiqId: 'ast_3' }
     ]).run();
@@ -115,22 +106,18 @@ export class AdminService {
       fanIlmu: fan,
       tingkatId: idx % 2 === 0 ? 'tkt_1' : 'tkt_3'
     }));
-    // @ts-ignore
-    await db.insert(require('../db/schema').kitab).values(kitabList).run();
+    await db.insert(schema.kitab).values(kitabList).run();
 
     // 8. Santri
-    const santriList = [];
     for (let i = 1; i <= 20; i++) {
-      santriList.push({
+      await db.insert(schema.santri).values({
         id: `str_${i}`,
         noStambuk: `STB${2026000 + i}`,
         name: `Santriwati ${i}`,
         kelasId: i <= 10 ? 'kls_1' : 'kls_2',
         kamarId: 'kmr_1'
-      });
+      }).run();
     }
-    // @ts-ignore
-    await db.insert(require('../db/schema').santri).values(santriList).run();
 
     return { message: "Database wiped and seeded with dummy data successfully!" };
   }
@@ -156,17 +143,13 @@ export class AdminService {
       : (nameParts.length === 1 ? nameParts[0] : `user${Math.floor(Math.random() * 100)}`);
 
 
-    const res = await auth.api.signUpUsername({
-      body: { username, password: 'mubtadiaat123', name: asatidz.name },
-      asResponse: false
-    });
+    const userId = uuidv4();
+    const passwordHash = await (await import('better-auth/crypto')).hashPassword('mubtadiaat123');
+    await db.insert(schema.users).values({ id: userId, username, name: asatidz.name, role: roleId }).run();
+    await db.insert(schema.accounts).values({ id: uuidv4(), userId, accountId: username, providerId: 'credential', password: passwordHash }).run();
 
-    if (res?.user?.id) {
-      await adminRepository.updateUserRoleAndUsername(res.user.id, roleId, username);
-      await adminRepository.update('asatidz', id, { userId: res.user.id });
-      return { success: true, username, password: 'mubtadiaat123' };
-    }
-    throw new Error("Gagal membuat akun");
+    await adminRepository.update('asatidz', id, { userId: userId });
+    return { success: true, username, password: 'mubtadiaat123' };
   }
 
   async getAsatidz() {
