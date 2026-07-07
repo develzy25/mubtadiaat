@@ -22,6 +22,8 @@ import { AdminKelasRombelPage } from './pages/master/AdminKelasRombelPage';
 import { AdminKitabPage } from './pages/master/AdminKitabPage';
 import { AdminAsatidzPage } from './pages/master/AdminAsatidzPage';
 
+import { AdminTahunAjaranPage } from './pages/AdminTahunAjaranPage';
+
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles: number[] }) => {
   const { data: session, isPending } = useSession();
   
@@ -61,6 +63,7 @@ function App() {
             <Route path="/blok-kamar" element={<AdminBlokKamarPage />} />
             <Route path="/jadwal" element={<AdminJadwalPage />} />
             <Route path="/rapot" element={<AdminRapotPage />} />
+            <Route path="/tahun-ajaran" element={<AdminTahunAjaranPage />} />
             <Route path="/*" element={<Navigate to="/dashboard" replace />} />
           </Route>
         </Routes>

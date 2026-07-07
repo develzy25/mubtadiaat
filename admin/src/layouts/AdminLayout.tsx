@@ -91,6 +91,7 @@ export const AdminLayout = () => {
       icon: <UserCog className="w-5 h-5" />,
       groupKey: 'sistem',
       children: [
+        { name: 'Tahun Ajaran', path: '/tahun-ajaran', icon: <Calendar className="w-4 h-4" /> },
         { name: 'Master Pengurus', path: '/asatidz', icon: <UserCircle className="w-4 h-4" /> },
         { name: 'Akses & Pengguna', path: '/users', icon: <UserCog className="w-4 h-4" /> },
         { name: 'Catatan Audit', path: '/logs', icon: <History className="w-4 h-4" /> }
@@ -123,7 +124,7 @@ export const AdminLayout = () => {
             </div>
             <div>
               <h1 className="font-extrabold text-base tracking-tight text-white drop-shadow-md">e-Mubtadi'aat</h1>
-              <p className="text-[10px] text-blue-400 font-black uppercase tracking-widest mt-0.5">Portal Admin Web</p>
+              <p className="text-[10px] text-blue-400 font-black uppercase tracking-widest mt-0.5">Portal Admin</p>
             </div>
           </motion.div>
           <button onClick={() => setSidebarOpen(false)} className="md:hidden text-slate-400 hover:text-white relative z-10">
