@@ -86,7 +86,7 @@ export class AdminService {
   async getTingkat() { return await adminRepository.getTingkat(); }
   async getKelas() { return await adminRepository.getKelas(); }
   async getKitab() { return await adminRepository.getKitab(); }
-  async getSantri() { return await adminRepository.getSantri(); }
+  async getSantri(filters?: any) { return await adminRepository.getSantri(filters); }
   async getJadwal() { return await adminRepository.getJadwal(); }
   async getRapotSemester() { return await adminRepository.getRapotSemester(); }
 

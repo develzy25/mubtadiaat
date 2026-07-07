@@ -203,7 +203,12 @@ export const deleteKitab = async (c: Context) => {
 
 // Santri
 export const getSantri = async (c: Context) => {
-  const list = await adminService.getSantri();
+  const status = c.req.query('status');
+  const search = c.req.query('search');
+  const kelasId = c.req.query('kelasId');
+  const filters = { status, search, kelasId };
+  
+  const list = await adminService.getSantri(filters);
   return c.json({ success: true, data: list, meta: { total: list.length } });
 };
 export const createSantri = async (c: Context) => {

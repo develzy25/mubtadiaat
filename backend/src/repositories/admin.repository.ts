@@ -1,6 +1,6 @@
 import { db } from '../db/index';
 import * as schema from '../db/schema';
-import { eq, desc, count } from 'drizzle-orm';
+import { eq, desc, count, and, like, or } from 'drizzle-orm';
 
 export class AdminRepository {
   // Stats
@@ -144,8 +144,8 @@ export class AdminRepository {
     .orderBy(desc(schema.kitab.createdAt));
   }
 
-  async getSantri() {
-    return await db.select({
+  async getSantri(filters?: { status?: string; search?: string; kelasId?: string }) {
+    let baseQuery = db.select({
       id: schema.santri.id,
       noStambuk: schema.santri.noStambuk,
       nik: schema.santri.nik,
@@ -166,8 +166,31 @@ export class AdminRepository {
     .leftJoin(schema.tingkat, eq(schema.kelas.tingkatId, schema.tingkat.id))
     .leftJoin(schema.jenjang, eq(schema.tingkat.jenjangId, schema.jenjang.id))
     .leftJoin(schema.kamar, eq(schema.santri.kamarId, schema.kamar.id))
-    .leftJoin(schema.blok, eq(schema.kamar.blokId, schema.blok.id))
-    .orderBy(desc(schema.santri.createdAt));
+    .leftJoin(schema.blok, eq(schema.kamar.blokId, schema.blok.id));
+
+    const conditions = [];
+    if (filters?.status) {
+      conditions.push(eq(schema.santri.status, filters.status));
+    }
+    if (filters?.kelasId) {
+      conditions.push(eq(schema.santri.kelasId, filters.kelasId));
+    }
+    if (filters?.search) {
+      const s = `%${filters.search}%`;
+      conditions.push(
+        or(
+          like(schema.santri.name, s),
+          like(schema.santri.noStambuk, s),
+          like(schema.santri.nik, s)
+        )
+      );
+    }
+
+    if (conditions.length > 0) {
+      baseQuery = baseQuery.where(and(...conditions)) as any;
+    }
+
+    return await baseQuery.orderBy(desc(schema.santri.createdAt));
   }
 
   async getJadwal() {
