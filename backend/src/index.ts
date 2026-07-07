@@ -38,7 +38,7 @@ import { drizzle } from 'drizzle-orm/d1';
 
 app.post('/api/auth/mobile-login', async (c) => {
   console.log("MOBILE LOGIN REQUEST");
-  const auth = getAuth(c.env, c.req.url);
+  const auth = getAuth(c.env, c.req.url, c.req.header('origin'));
   try {
     const body = await c.req.json();
     const db = drizzle(c.env.DB, { schema });
@@ -65,10 +65,24 @@ app.post('/api/auth/mobile-login', async (c) => {
   }
 });
 
-app.on(['POST', 'GET'], '/api/auth/**', (c) => {
-  console.log("AUTH REQUEST:", c.req.url, c.req.method);
-  const auth = getAuth(c.env, c.req.url);
-  return auth.handler(c.req.raw);
+app.on(['POST', 'GET'], '/api/auth/*', (c) => {
+  const reqOrigin = c.req.header('origin');
+  console.log("AUTH REQUEST:", c.req.url, c.req.method, "Origin:", reqOrigin);
+  
+  let reqToAuth = c.req.raw;
+  // If the request comes from our trusted Pages domains, spoof the Origin header 
+  if (reqOrigin && (reqOrigin.endsWith('.pages.dev') || reqOrigin.includes('localhost'))) {
+    const newHeaders = new Headers(reqToAuth.headers);
+    newHeaders.set('origin', new URL(c.req.url).origin);
+    reqToAuth = new Request(reqToAuth, { 
+      headers: newHeaders,
+      body: reqToAuth.body,
+      duplex: 'half' 
+    } as any);
+  }
+
+  const auth = getAuth(c.env, c.req.url, reqOrigin);
+  return auth.handler(reqToAuth);
 });
 
 // Export for Cloudflare Workers

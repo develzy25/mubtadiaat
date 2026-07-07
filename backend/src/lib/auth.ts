@@ -8,7 +8,8 @@ import { username } from 'better-auth/plugins';
 // This function returns the betterAuth instance configured with the D1 database binding
 export const getAuth = (
   env: { DB: D1Database; BETTER_AUTH_SECRET: string; BETTER_AUTH_URL: string },
-  requestUrl?: string
+  requestUrl?: string,
+  requestOrigin?: string
 ) => {
   const db = drizzle(env.DB, { schema });
 
@@ -23,7 +24,8 @@ export const getAuth = (
   const origins = [
     'http://localhost:5173',
     'http://localhost:5174',
-    'http://localhost:8081'
+    'http://localhost:8081',
+    'https://mubtadiaat.pages.dev'
   ];
 
   if (requestUrl) {
@@ -35,6 +37,13 @@ export const getAuth = (
       }
     } catch (_) {}
   }
+  
+  // Dynamically trust any preview branch from Cloudflare Pages
+  if (requestOrigin && requestOrigin.endsWith('.pages.dev') && !origins.includes(requestOrigin)) {
+    origins.push(requestOrigin);
+  }
+
+  console.log("BETTER_AUTH config baseURL:", finalBaseURL, "trustedOrigins:", origins);
 
   return betterAuth({
     database: drizzleAdapter(db, {
@@ -57,6 +66,11 @@ export const getAuth = (
       bearer(),
       username(),
     ],
+    advanced: {
+      crossSubDomainCookies: {
+        enabled: true
+      }
+    },
     trustedOrigins: origins,
     secret: env.BETTER_AUTH_SECRET,
     baseURL: finalBaseURL,
