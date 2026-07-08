@@ -1,7 +1,0 @@
-import { createAuthClient } from 'better-auth/react';
-import { usernameClient } from 'better-auth/client/plugins';
-
-export const authClient = createAuthClient({
-  baseURL: 'https://mubtadiat-db.eppds.workers.dev/api/auth',
-  plugins: [usernameClient()]
-});

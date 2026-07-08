@@ -5,7 +5,7 @@ import { eq, and, sql } from 'drizzle-orm';
 
 export const getKelasMustahiq = async (c: Context) => {
   // In real implementation, get user ID from token middleware
-  const userId = c.get('userId') || 'simulated-user-id';
+  const userId = c.get('userId');
   
   // Find asatidz linked to this user
   const asatidzList = await db.select().from(schema.asatidz).where(eq(schema.asatidz.userId, userId));
@@ -20,9 +20,41 @@ export const getKelasMustahiq = async (c: Context) => {
 };
 
 export const getJadwalMengajar = async (c: Context) => {
-  const userId = c.get('userId') || 'simulated-user-id';
-  // Simplified for now
-  return c.json({ success: true, data: [] });
+  const userId = c.get('userId');
+  
+  // Find asatidz linked to this user
+  const asatidzList = await db.select().from(schema.asatidz).where(eq(schema.asatidz.userId, userId));
+  if (asatidzList.length === 0) return c.json({ success: true, data: [] });
+
+  const asatidzId = asatidzList[0].id;
+
+  // Fetch from jadwal_pelajaran
+  const jadwal = await db.select({
+    id: schema.jadwalPelajaran.id,
+    hari: schema.jadwalPelajaran.hari,
+    sesi: schema.jadwalPelajaran.sesi,
+    kelas: schema.kelas.bagian,
+    kitab: schema.kitab.name,
+    tingkat: schema.tingkat.name,
+    lokal: schema.kelas.lokal
+  })
+  .from(schema.jadwalPelajaran)
+  .innerJoin(schema.kelas, eq(schema.jadwalPelajaran.kelasId, schema.kelas.id))
+  .innerJoin(schema.kitab, eq(schema.jadwalPelajaran.kitabId, schema.kitab.id))
+  .innerJoin(schema.tingkat, eq(schema.kelas.tingkatId, schema.tingkat.id))
+  .where(eq(schema.jadwalPelajaran.pengajarId, asatidzId));
+
+  // Format into frontend expected structure
+  const formattedData = jadwal.map(j => ({
+    id: j.id,
+    hari: j.hari,
+    waktu: j.sesi === 'Sesi 1' ? '07:30 - 08:30' : '08:30 - 09:30',
+    kelas: `Kelas ${j.tingkat} - ${j.kelas}`,
+    kitab: j.kitab,
+    lokal: j.lokal
+  }));
+
+  return c.json({ success: true, data: formattedData });
 };
 
 export const getPresensiHarian = async (c: Context) => {
@@ -89,7 +121,7 @@ export const savePresensiHarian = async (c: Context) => {
 
 export const getDashboard = async (c: Context) => {
   const role = c.req.header('X-Role') || 'mustahiq';
-  const userId = c.get('userId') || 'simulated-user-id';
+  const userId = c.get('userId');
   
   // Real DB count queries
   let summary: any = {};

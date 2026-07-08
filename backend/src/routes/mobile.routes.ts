@@ -1,7 +1,11 @@
 import { Hono } from 'hono';
 import * as mobileController from '../controllers/mobile.controller.js';
+import { authMiddleware } from '../middlewares/auth.middleware.js';
 
 const mobile = new Hono();
+
+// Apply Auth Middleware to all mobile routes
+mobile.use('*', authMiddleware);
 
 // Presensi
 mobile.get('/presensi/:classId', mobileController.getPresensiHarian);

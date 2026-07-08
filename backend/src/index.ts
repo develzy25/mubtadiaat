@@ -6,6 +6,7 @@ import { initDb } from './db/index';
 
 import adminRoutes from './routes/admin.routes';
 import mobileRoutes from './routes/mobile.routes';
+import kelulusanRoutes from './routes/kelulusan';
 
 const app = new Hono<{ Bindings: any }>();
 
@@ -30,6 +31,7 @@ app.get('/api/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISO
 
 app.route('/api/admin', adminRoutes);
 app.route('/api/mobile', mobileRoutes);
+app.route('/api/kelulusan', kelulusanRoutes);
 
 import { getAuth } from './lib/auth.js';
 import { eq } from 'drizzle-orm';

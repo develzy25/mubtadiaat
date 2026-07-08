@@ -6,7 +6,17 @@ import * as rapotController from '../controllers/rapot.controller';
 const admin = new Hono();
 
 // Auth & Users
+import { seedTsanawiyah } from '../db/seed_tsanawiyah';
+
 admin.get('/seed/full', adminController.seedFullData);
+admin.get('/seed/tsanawiyah', async (c) => {
+  try {
+    const res = await seedTsanawiyah((c.env as any).DB);
+    return c.json({ success: true, message: 'Tsanawiyah jadwal seeded successfully', data: res });
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message });
+  }
+});
 admin.get('/users', adminController.getUsers);
 admin.post('/users', adminController.createUser);
 admin.put('/users/:id', adminController.updateUser);

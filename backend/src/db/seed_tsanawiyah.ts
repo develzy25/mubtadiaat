@@ -1,7 +1,8 @@
-import { db } from './index';
 import * as schema from './schema';
+import { drizzle } from 'drizzle-orm/d1';
 
-async function seedTsanawiyah() {
+export async function seedTsanawiyah(envDb: any) {
+  const db = drizzle(envDb, { schema });
   console.log('Seeding Tsanawiyah Data...');
 
   // 1. Insert Asatidz (Mustahiq)
@@ -53,38 +54,101 @@ async function seedTsanawiyah() {
   const kitabData = [
     { id: 'ktb_mukhtashor', tingkatId: 'tkt_ts_1', name: 'Mukhtashor Jiddan' },
     { id: 'ktb_fathul', tingkatId: 'tkt_ts_1', name: 'Fathul Mubin' },
-    { id: 'ktb_khoridah', tingkatId: 'tkt_ts_1', name: 'Al-Khoridah Al-Bahiyyah / Mukhtashor Jiddan' },
+    { id: 'ktb_khoridah', tingkatId: 'tkt_ts_1', name: 'Al-Khoridah Al-Bahiyyah \\ Mukhtashor Jiddan' },
     { id: 'ktb_sullam', tingkatId: 'tkt_ts_1', name: 'Sullam Taufiq' },
-    { id: 'ktb_qowaid', tingkatId: 'tkt_ts_1', name: 'Qowa\'id As-Shorfiyyah' },
-    { id: 'ktb_bulughul', tingkatId: 'tkt_ts_1', name: 'Bulughul Marom' },
+    { id: 'ktb_qowaid', tingkatId: 'tkt_ts_1', name: 'Qowaid As-Shorfiyyah' },
+    { id: 'ktb_bulughul', tingkatId: 'tkt_ts_1', name: 'Bulughul Maram' },
     { id: 'ktb_tashrif', tingkatId: 'tkt_ts_1', name: 'Tashrif Al-Ishthilahi' },
     { id: 'ktb_washoya', tingkatId: 'tkt_ts_1', name: 'Washoya Al-Abaa\' lil Abnaa\'' },
     { id: 'ktb_ilal', tingkatId: 'tkt_ts_1', name: 'Al-I\'lal' },
-    { id: 'ktb_tuhfah', tingkatId: 'tkt_ts_1', name: 'Tuhfah al-Athfal / Al-Qur\'an' },
+    { id: 'ktb_tuhfah', tingkatId: 'tkt_ts_1', name: 'Tuhfah Al-Athfal | Al-Qur\'an' },
   ];
   await db.insert(schema.kitab).values(kitabData).onConflictDoNothing();
 
-  // 6. Insert Jadwal Pelajaran
-  // Berdasarkan gambar jadwal (semua kelas jadwalnya persis sama urutannya untuk kelas 1 Tsanawiyah)
-  // Kecuali untuk pelajaran yang diampu Munawwibah (Tuhfah, Washoya, Fathul Mubin) akan kita beri id pengajarnya.
-  
+  // 6. Define Schedule explicitly per Bagian
   const days = ['Sabtu', 'Ahad', 'Senin', 'Selasa', 'Rabu', 'Kamis'];
   
-  // Mapping jadwal harian (berlaku untuk semua bagian)
-  // [Sesi 1, Sesi 2]
-  const jadwalTemplate = {
-    'Sabtu': ['ktb_mukhtashor', 'ktb_fathul'],
-    'Ahad': ['ktb_khoridah', 'ktb_sullam'],
-    'Senin': ['ktb_qowaid', 'ktb_bulughul'],
-    'Selasa': ['ktb_tashrif', 'ktb_washoya'],
-    'Rabu': ['ktb_ilal', 'ktb_bulughul'],
-    'Kamis': ['ktb_sullam', 'ktb_tuhfah']
+  // Mapping of exact subjects per Bagian per Day for [Sesi 1, Sesi 2]
+  const schedules: Record<string, Record<string, string[]>> = {
+    'A': {
+      'Sabtu': ['ktb_mukhtashor', 'ktb_fathul'],
+      'Ahad': ['ktb_khoridah', 'ktb_sullam'],
+      'Senin': ['ktb_qowaid', 'ktb_bulughul'],
+      'Selasa': ['ktb_tashrif', 'ktb_washoya'],
+      'Rabu': ['ktb_ilal', 'ktb_bulughul'],
+      'Kamis': ['ktb_sullam', 'ktb_tuhfah']
+    },
+    'B': {
+      'Sabtu': ['ktb_mukhtashor', 'ktb_bulughul'],
+      'Ahad': ['ktb_khoridah', 'ktb_sullam'],
+      'Senin': ['ktb_qowaid', 'ktb_washoya'],
+      'Selasa': ['ktb_tashrif', 'ktb_fathul'],
+      'Rabu': ['ktb_ilal', 'ktb_tuhfah'],
+      'Kamis': ['ktb_sullam', 'ktb_bulughul']
+    },
+    'C': {
+      'Sabtu': ['ktb_mukhtashor', 'ktb_sullam'],
+      'Ahad': ['ktb_khoridah', 'ktb_bulughul'],
+      'Senin': ['ktb_qowaid', 'ktb_fathul'],
+      'Selasa': ['ktb_tashrif', 'ktb_tuhfah'],
+      'Rabu': ['ktb_ilal', 'ktb_washoya'],
+      'Kamis': ['ktb_sullam', 'ktb_bulughul']
+    },
+    'D': {
+      'Sabtu': ['ktb_mukhtashor', 'ktb_fathul'],
+      'Ahad': ['ktb_khoridah', 'ktb_tuhfah'],
+      'Senin': ['ktb_qowaid', 'ktb_bulughul'],
+      'Selasa': ['ktb_tashrif', 'ktb_washoya'],
+      'Rabu': ['ktb_ilal', 'ktb_sullam'],
+      'Kamis': ['ktb_sullam', 'ktb_bulughul']
+    },
+    'E': {
+      'Sabtu': ['ktb_mukhtashor', 'ktb_bulughul'],
+      'Ahad': ['ktb_khoridah', 'ktb_fathul'],
+      'Senin': ['ktb_qowaid', 'ktb_washoya'],
+      'Selasa': ['ktb_tashrif', 'ktb_bulughul'],
+      'Rabu': ['ktb_ilal', 'ktb_sullam'],
+      'Kamis': ['ktb_sullam', 'ktb_tuhfah']
+    },
+    'F': {
+      'Sabtu': ['ktb_mukhtashor', 'ktb_sullam'],
+      'Ahad': ['ktb_khoridah', 'ktb_washoya'],
+      'Senin': ['ktb_qowaid', 'ktb_bulughul'],
+      'Selasa': ['ktb_tashrif', 'ktb_fathul'],
+      'Rabu': ['ktb_ilal', 'ktb_tuhfah'],
+      'Kamis': ['ktb_sullam', 'ktb_bulughul']
+    },
+    'G': {
+      'Sabtu': ['ktb_mukhtashor', 'ktb_washoya'],
+      'Ahad': ['ktb_khoridah', 'ktb_bulughul'],
+      'Senin': ['ktb_qowaid', 'ktb_sullam'],
+      'Selasa': ['ktb_tashrif', 'ktb_tuhfah'],
+      'Rabu': ['ktb_ilal', 'ktb_fathul'],
+      'Kamis': ['ktb_sullam', 'ktb_bulughul']
+    },
+    'H': {
+      'Sabtu': ['ktb_mukhtashor', 'ktb_fathul'],
+      'Ahad': ['ktb_khoridah', 'ktb_washoya'],
+      'Senin': ['ktb_qowaid', 'ktb_tuhfah'],
+      'Selasa': ['ktb_tashrif', 'ktb_bulughul'],
+      'Rabu': ['ktb_ilal', 'ktb_sullam'],
+      'Kamis': ['ktb_sullam', 'ktb_bulughul']
+    },
+    'I': {
+      'Sabtu': ['ktb_mukhtashor', 'ktb_washoya'],
+      'Ahad': ['ktb_khoridah', 'ktb_tuhfah'],
+      'Senin': ['ktb_qowaid', 'ktb_fathul'],
+      'Selasa': ['ktb_tashrif', 'ktb_bulughul'],
+      'Rabu': ['ktb_ilal', 'ktb_sullam'],
+      'Kamis': ['ktb_sullam', 'ktb_bulughul']
+    }
   };
 
   const jadwalInserts: any[] = [];
 
   for (const kls of kelasData) {
     const bagian = kls.bagian;
+    const classSchedule = schedules[bagian];
     
     // Tentukan Munawwibah berdasarkan bagian
     // Tuhfah al-Athfal (A B C D = ast_lulu, E F G H I = ast_siti_khodijah)
@@ -100,9 +164,9 @@ async function seedTsanawiyah() {
     if (bagian === 'A') guruFathul = 'ast_muyasaroh';
     else if (['B','C','D','E'].includes(bagian)) guruFathul = 'ast_siti_sarah';
 
-    for (const [hari, kitabs] of Object.entries(jadwalTemplate)) {
+    for (const hari of days) {
       for (let sesi = 0; sesi < 2; sesi++) {
-        const kitabId = kitabs[sesi];
+        const kitabId = classSchedule[hari][sesi];
         
         let pengajarId = kls.mustahiqId; // Default pengajar adalah wali kelas (Mustahiq)
         if (kitabId === 'ktb_tuhfah') pengajarId = guruTuhfah;
@@ -122,8 +186,15 @@ async function seedTsanawiyah() {
     }
   }
 
-  await db.insert(schema.jadwalPelajaran).values(jadwalInserts).onConflictDoNothing();
+  // Insert new schedule in chunks to avoid parameter limits in D1
+  if (jadwalInserts.length > 0) {
+    const chunkSize = 10;
+    for (let i = 0; i < jadwalInserts.length; i += chunkSize) {
+      const chunk = jadwalInserts.slice(i, i + chunkSize);
+      await db.insert(schema.jadwalPelajaran).values(chunk).onConflictDoNothing();
+    }
+  }
+  
   console.log('Seeding Success!');
+  return jadwalInserts;
 }
-
-seedTsanawiyah().catch(console.error);

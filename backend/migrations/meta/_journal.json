@@ -36,6 +36,13 @@
       "when": 1783423643666,
       "tag": "0004_misty_the_anarchist",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1783466202473,
+      "tag": "0005_tricky_paper_doll",
+      "breakpoints": true
     }
   ]
 }

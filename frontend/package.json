@@ -1,0 +1,69 @@
+{
+  "name": "frontend",
+  "private": true,
+  "version": "1.0.27",
+  "description": "Mubtadiaat Admin Application",
+  "author": "Develzy",
+  "repository": "github:develzy25/mubtadiaat",
+  "type": "module",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "electron:start": "concurrently \"vite\" \"wait-on tcp:5173 && electron .\"",
+    "build:windows": "tsc -b && vite build && electron-builder --win"
+  },
+  "build": {
+    "appId": "com.develzy25.mubtadiaat",
+    "productName": "Mubtadiaat Admin",
+    "artifactName": "mubtadiaat.admin.v.2.5.exe",
+    "directories": {
+      "output": "dist_electron"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "license": "build/license.txt"
+    }
+  },
+  "dependencies": {
+    "@mubtadiaat/shared": "*",
+    "@tanstack/react-query": "^5.101.2",
+    "better-auth": "^1.6.23",
+    "clsx": "^2.1.1",
+    "dexie": "^4.4.4",
+    "electron-updater": "^6.8.9",
+    "exceljs": "^4.4.0",
+    "framer-motion": "^12.42.2",
+    "lucide-react": "^1.23.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-router": "^8.1.0",
+    "tailwind-merge": "^3.6.0",
+    "xlsx": "^0.18.5",
+    "zustand": "^5.0.14"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/node": "^24.13.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "concurrently": "^8.2.2",
+    "electron": "43.0.0",
+    "electron-builder": "^26.15.3",
+    "oxlint": "^1.71.0",
+    "tailwindcss": "^4.0.0",
+    "typescript": "~6.0.2",
+    "vite": "^8.1.1",
+    "wait-on": "^9.0.10"
+  }
+}

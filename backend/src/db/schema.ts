@@ -245,3 +245,36 @@ export const auditLogs = sqliteTable('audit_logs', {
   device: text('device'),
   ...timestampFields,
 });
+
+// ==========================================
+// 8. MODUL KELULUSAN (SERTIFIKAT & IJAZAH)
+// ==========================================
+export const kelulusanSertifikat = sqliteTable('kelulusan_sertifikat', {
+  id: text('id').primaryKey(),
+  santriId: text('santri_id').notNull().references(() => santri.id, { onDelete: 'cascade' }),
+  kelasId: text('kelas_id').notNull().references(() => kelas.id),
+  academicYear: text('academic_year').notNull(),
+  nilaiUjian: real('nilai_ujian'),
+  nilaiQiroah: real('nilai_qiroah'),
+  nilaiMuhafadhoh: real('nilai_muhafadhoh'),
+  rataRata: real('rata_rata'),
+  lulus: integer('lulus', { mode: 'boolean' }).default(false),
+  penempatan: text('penempatan'),
+  ...timestampFields
+});
+
+export const kelulusanIjazah = sqliteTable('kelulusan_ijazah', {
+  id: text('id').primaryKey(),
+  santriId: text('santri_id').notNull().references(() => santri.id, { onDelete: 'cascade' }),
+  kelasId: text('kelas_id').notNull().references(() => kelas.id),
+  academicYear: text('academic_year').notNull(),
+  rataRataSmt1: real('rata_rata_smt1'),
+  rataRataSmt2: real('rata_rata_smt2'),
+  rataRataAkhir: real('rata_rata_akhir'),
+  lulusPraktik: integer('lulus_praktik', { mode: 'boolean' }).default(false),
+  lulusAlquran: integer('lulus_alquran', { mode: 'boolean' }).default(false),
+  lulusKitab: integer('lulus_kitab', { mode: 'boolean' }).default(false),
+  lulusKhidmah: integer('lulus_khidmah', { mode: 'boolean' }).default(false), // untuk Aliyah
+  lulus: integer('lulus', { mode: 'boolean' }).default(false),
+  ...timestampFields
+});
