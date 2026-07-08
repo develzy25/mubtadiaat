@@ -5,7 +5,18 @@ import * as schema from '../db/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/d1';
 
-const app = new Hono<{ Bindings: CloudflareBindings }>();
+import { authMiddleware } from '../middlewares/auth.middleware.js';
+
+const app = new Hono<{ Bindings: CloudflareBindings; Variables: { userRole: number; userId: string; user: any } }>();
+
+app.use('*', authMiddleware);
+app.use('*', async (c, next) => {
+  const role = c.get('userRole');
+  if (role !== 1 && role !== 2 && role !== 3) {
+    return c.json({ success: false, message: 'Forbidden: Unauthorized access' }, 403);
+  }
+  await next();
+});
 
 // GET /api/kelulusan/sertifikat
 // Mengambil data kelulusan sertifikat berdasarkan kelasId dan academicYear

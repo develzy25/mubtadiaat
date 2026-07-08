@@ -58,7 +58,16 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode,
   return <>{children}</>;
 };
 
+import { useEffect } from 'react';
+import { useSettingsStore } from './stores/useSettingsStore';
+
 function App() {
+  const fetchSettings = useSettingsStore(state => state.fetchSettings);
+
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <NotificationRenderer />

@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
+const API_URL = import.meta.env.VITE_API_URL || 'https://mubtadiat-db.eppds.workers.dev';
 
 const getHeaders = () => {
   const token = localStorage.getItem('better-auth.session_token');

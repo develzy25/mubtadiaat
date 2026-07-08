@@ -1,34 +1,75 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #1E40AF;
-  --color-secondary: #0F172A;
-  --color-accent: #38BDF8;
-  --font-sans: "Inter", system-ui, sans-serif;
+  --color-primary: #0ea5e9;
+  --color-primary-dark: #0369a1;
+  --color-primary-light: #e0f2fe;
+  
+  --color-gold: #d97706;
+  --color-gold-hover: #b45309;
+  --color-gold-light: #fef3c7;
+  
+  --color-secondary: #0f172a;
+  --color-accent: #eab308;
+  
+  --font-sans: "Outfit", "Inter", system-ui, sans-serif;
 }
 
 @layer base {
   body {
-    background-color: #F8FAFC;
-    color: #0F172A;
+    background-color: #f8fafc;
+    background-image: radial-gradient(at 0% 0%, rgba(14, 165, 233, 0.04) 0px, transparent 50%),
+                      radial-gradient(at 100% 0%, rgba(217, 119, 6, 0.04) 0px, transparent 50%);
+    background-attachment: fixed;
+    color: #0f172a;
   }
 }
 
 @layer utilities {
   .neumorph {
     background-color: #ffffff;
-    box-shadow: 8px 8px 16px rgba(0, 0, 0, 0.05), -8px -8px 16px rgba(255, 255, 255, 0.8);
+    box-shadow: 8px 8px 16px rgba(0, 0, 0, 0.03), -8px -8px 16px rgba(255, 255, 255, 0.8);
   }
   
   .neumorph-pressed {
     background-color: #f8fafc;
-    box-shadow: inset 4px 4px 8px rgba(0, 0, 0, 0.04), inset -4px -4px 8px rgba(255, 255, 255, 0.9);
+    box-shadow: inset 4px 4px 8px rgba(0, 0, 0, 0.02), inset -4px -4px 8px rgba(255, 255, 255, 0.9);
   }
   
   .glass {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border: 1px solid rgba(255, 255, 255, 0.5);
+  }
+
+  .glass-dark {
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .gold-gradient {
+    background: linear-gradient(135deg, #d97706 0%, #f59e0b 50%, #eab308 100%);
+  }
+
+  .sky-gradient {
+    background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 50%, #38bdf8 100%);
+  }
+
+  .premium-card {
+    background: #ffffff;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
+    border-radius: 1rem;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .premium-card:hover {
+    box-shadow: 0 12px 20px -3px rgba(14, 165, 233, 0.06), 0 4px 6px -4px rgba(14, 165, 233, 0.06);
+    border-color: rgba(14, 165, 233, 0.25);
+    transform: translateY(-2px);
   }
 }

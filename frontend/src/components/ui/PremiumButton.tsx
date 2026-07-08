@@ -4,7 +4,7 @@ import { Loader2 } from 'lucide-react';
 import { cn } from '../../lib/cn';
 
 interface PremiumButtonProps extends HTMLMotionProps<'button'> {
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'gold';
   isLoading?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
@@ -16,7 +16,8 @@ export const PremiumButton = React.forwardRef<HTMLButtonElement, PremiumButtonPr
     const baseStyles = "relative inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-sm font-semibold transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 overflow-hidden";
     
     const variants = {
-      primary: "bg-linear-to-r from-blue-500 to-blue-600 text-white shadow-[0_10px_20px_rgba(37,99,235,0.3)] hover:shadow-[0_15px_25px_rgba(37,99,235,0.4)] focus:ring-blue-500 border border-blue-400/50",
+      primary: "bg-linear-to-r from-sky-400 via-sky-500 to-sky-600 text-white shadow-[0_10px_20px_rgba(14,165,233,0.25)] hover:shadow-[0_15px_25px_rgba(14,165,233,0.35)] focus:ring-sky-400 border border-sky-300/50",
+      gold: "bg-linear-to-r from-amber-500 via-yellow-500 to-amber-600 text-white shadow-[0_10px_20px_rgba(217,119,6,0.25)] hover:shadow-[0_15px_25px_rgba(217,119,6,0.35)] focus:ring-amber-500 border border-amber-300/50",
       secondary: "neumorph text-slate-700 hover:shadow-neu-floating focus:ring-slate-200",
       danger: "bg-linear-to-r from-red-500 to-rose-500 text-white shadow-[0_10px_20px_rgba(239,68,68,0.3)] hover:shadow-[0_15px_25px_rgba(239,68,68,0.4)] focus:ring-red-500 border border-red-400/50",
       ghost: "bg-transparent text-slate-600 hover:neumorph focus:ring-slate-200",

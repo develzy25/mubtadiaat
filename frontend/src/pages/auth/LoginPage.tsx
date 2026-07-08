@@ -50,42 +50,42 @@ export const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-dvh bg-[#F0F4F8] flex flex-col items-center justify-center p-4 relative">
+    <div className="min-h-dvh bg-slate-50 flex flex-col items-center justify-center p-4 relative overflow-hidden">
       {/* Decorative background elements */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 opacity-50">
-        <div className="absolute top-[-10%] left-[-10%] w-[40vw] h-[40vw] min-w-64 min-h-64 bg-blue-200/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40vw] h-[40vw] min-w-64 min-h-64 bg-indigo-200/20 rounded-full blur-3xl" />
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 opacity-80">
+        <div className="absolute top-[-10%] left-[-10%] w-[45vw] h-[45vw] min-w-64 min-h-64 bg-sky-200/25 rounded-full blur-3xl" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[45vw] h-[45vw] min-w-64 min-h-64 bg-amber-100/20 rounded-full blur-3xl" />
       </div>
       
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.5, type: "spring", bounce: 0.3 }}
-        className="w-full max-w-md relative z-10 flex flex-col justify-center"
+        className="w-full max-w-md relative z-10 flex flex-col justify-center animate-fade-in"
       >
         <div className="text-center mb-5 sm:mb-6 flex flex-col items-center">
-          <div className="w-24 h-24 sm:w-28 sm:h-28 neumorph rounded-full flex items-center justify-center p-3 mb-3 transition-transform hover:scale-105">
+          <div className="w-24 h-24 sm:w-28 sm:h-28 glass rounded-full flex items-center justify-center p-3 mb-3 transition-all duration-300 hover:scale-105 border-2 border-gold/20 shadow-md">
             <img 
               src="./logo.png" 
               alt="Logo P3HM Lirboyo" 
-              className="w-full h-full object-contain filter drop-shadow-[0_4px_6px_rgba(0,0,0,0.15)]"
+              className="w-full h-full object-contain filter drop-shadow-[0_4px_6px_rgba(0,0,0,0.1)]"
             />
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-tight mb-1">e-Mubtadi'aat</h1>
-          <p className="text-sm sm:text-base text-slate-500 font-medium mb-2">Sistem Informasi Manajemen P3HM Lirboyo</p>
-
+          <p className="text-sm sm:text-base text-slate-500 font-semibold mb-2">Sistem Informasi Manajemen P3HM Lirboyo</p>
+ 
           {/* Small subtle batik ornamental accent line */}
-          <div className="flex items-center justify-center gap-3 my-1 opacity-50">
-            <div className="h-px w-12 bg-linear-to-r from-transparent to-blue-500" />
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-blue-600">
-              <path d="M12 2L15 9L22 12L15 15L12 22L9 15L2 12L9 9L12 2Z" fill="currentColor" opacity="0.3" stroke="currentColor" strokeWidth="1.5"/>
+          <div className="flex items-center justify-center gap-3 my-1 opacity-80">
+            <div className="h-px w-12 bg-linear-to-r from-transparent to-sky-500" />
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-gold">
+              <path d="M12 2L15 9L22 12L15 15L12 22L9 15L2 12L9 9L12 2Z" fill="currentColor" opacity="0.4" stroke="currentColor" strokeWidth="1.5"/>
               <circle cx="12" cy="12" r="2.5" fill="currentColor" />
             </svg>
-            <div className="h-px w-12 bg-linear-to-l from-transparent to-blue-500" />
+            <div className="h-px w-12 bg-linear-to-l from-transparent to-sky-500" />
           </div>
         </div>
-
-        <GlassCard variant="neumorph" className="p-5 sm:p-8 w-full">
+ 
+        <GlassCard variant="glass" className="p-5 sm:p-8 w-full border border-slate-200/50 shadow-xl rounded-3xl">
           <form onSubmit={handleSubmit} className="flex flex-col gap-4 sm:gap-5">
             <h2 className="text-lg sm:text-xl font-bold text-slate-800 mb-1 sm:mb-2 text-center sm:text-left">
               Login ke Akun Anda

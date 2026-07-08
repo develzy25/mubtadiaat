@@ -1,36 +1,61 @@
 import { useState, useEffect } from 'react';
-import { AlertCircle, FileSpreadsheet } from 'lucide-react';
+import { AlertCircle, FileSpreadsheet, Check } from 'lucide-react';
 import { fetchKelasMustahiq, fetchPresensiHarian, savePresensiHarian } from '../../services/guru.service';
+import { PremiumButton } from '../../components/ui/PremiumButton';
 
 export const GuruPresensi = () => {
+  const [classes, setClasses] = useState<any[]>([]);
   const [santriList, setSantriList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeClassId, setActiveClassId] = useState<string | null>(null);
   const [className, setClassName] = useState<string>('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    const loadData = async () => {
+    const loadClasses = async () => {
       try {
         const classRes = await fetchKelasMustahiq();
         if (classRes?.success && classRes.data.length > 0) {
-          const classData = classRes.data[0];
-          setActiveClassId(classData.id);
-          setClassName(classData.bagian ? `Kelas ${classData.bagian}` : 'Kelas Aktif');
-          
-          const res = await fetchPresensiHarian(classData.id);
-          if (res?.success) {
-            const initialized = res.data.map((s: any) => ({
-              ...s,
-              izin: s.izin?.toString() || '',
-              alpha: s.alpha?.toString() || ''
-            }));
-            setSantriList(initialized);
-          } else {
-            setError(res?.message || 'Gagal memuat presensi');
-          }
+          setClasses(classRes.data);
+          const initialClass = classRes.data[0];
+          setActiveClassId(initialClass.id);
+          setClassName(initialClass.bagian ? `Kelas ${initialClass.bagian}` : 'Kelas Aktif');
         } else {
-           setError('Tidak ada kelas yang aktif untuk Anda.');
+          setError('Tidak ada kelas yang aktif untuk Anda.');
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error(err);
+        setError('Terjadi kesalahan koneksi saat memuat data kelas.');
+        setLoading(false);
+      }
+    };
+    loadClasses();
+  }, []);
+
+  useEffect(() => {
+    if (!activeClassId) return;
+
+    const loadSantri = async () => {
+      setLoading(true);
+      try {
+        const selectedClass = classes.find(c => c.id === activeClassId);
+        if (selectedClass) {
+          setClassName(selectedClass.bagian ? `Kelas ${selectedClass.bagian} (${selectedClass.lokal || ''})` : 'Kelas Aktif');
+        }
+
+        const res = await fetchPresensiHarian(activeClassId);
+        if (res?.success) {
+          const initialized = res.data.map((s: any) => ({
+            ...s,
+            izin: s.izin?.toString() || '',
+            alpha: s.alpha?.toString() || ''
+          }));
+          setSantriList(initialized);
+          setError(null);
+        } else {
+          setError(res?.message || 'Gagal memuat presensi');
         }
       } catch (err) {
         console.error(err);
@@ -39,8 +64,9 @@ export const GuruPresensi = () => {
         setLoading(false);
       }
     };
-    loadData();
-  }, []);
+
+    loadSantri();
+  }, [activeClassId, classes]);
 
   const handleInput = (santriId: string, field: 'izin' | 'alpha', value: string) => {
     setSantriList(prev => prev.map(s => {
@@ -60,6 +86,7 @@ export const GuruPresensi = () => {
       return;
     }
     
+    setSubmitting(true);
     try {
       const payload = santriList.map(s => ({
         santri_id: s.id,
@@ -71,27 +98,45 @@ export const GuruPresensi = () => {
     } catch(e) {
       console.error(e);
       alert('Gagal menyimpan rekap absensi. Periksa koneksi Anda.'); 
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const neumorphicShadow = "bg-white shadow-[4px_8px_20px_rgba(148,163,184,0.15)] border border-white";
-
   return (
     <div className="relative min-h-[80vh] flex flex-col pb-24">
-      {/* 3D Glassmorphism Abstract Background */}
-      <div className="absolute top-[-10%] left-[-20%] w-[300px] h-[300px] bg-blue-300/20 rounded-full blur-[80px] pointer-events-none -z-10" />
-      
-      {/* Premium Header */}
-      <div className={`${neumorphicShadow} rounded-b-[32px] px-6 pt-6 pb-6 z-10 mb-6 -mx-4 md:mx-0 md:rounded-[32px] md:mt-2`}>
-        <p className="text-blue-600 font-extrabold text-xs uppercase tracking-widest mb-1">Manajemen {className}</p>
-        <h1 className="text-2xl font-black text-slate-800 tracking-tight">Rekap Absensi</h1>
-        <p className="text-slate-500 font-semibold mt-1">Input jumlah Izin & Alpha per Semester</p>
+      {/* Premium Header Card */}
+      <div className="premium-card bg-white px-6 py-6 z-10 mb-6 border border-slate-200/50 shadow-sm rounded-3xl">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <p className="text-sky-600 font-extrabold text-xs uppercase tracking-widest mb-1">Manajemen {className}</p>
+            <h1 className="text-2xl font-black text-slate-800 tracking-tight">Rekap Absensi Santri</h1>
+            <p className="text-slate-500 font-semibold mt-1">Input jumlah Kehadiran Al-Ghoibah per Semester</p>
+          </div>
+          
+          {classes.length > 1 && (
+            <div className="min-w-48">
+              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Pilih Rombel Kelas</label>
+              <select
+                value={activeClassId || ''}
+                onChange={(e) => setActiveClassId(e.target.value)}
+                className="w-full bg-slate-50 rounded-2xl px-4 py-3 text-slate-700 font-bold focus:outline-hidden focus:ring-2 focus:ring-sky-500 border border-slate-200 text-sm shadow-sm transition-all"
+              >
+                {classes.map((cls) => (
+                  <option key={cls.id} value={cls.id}>
+                    Kelas {cls.bagian} ({cls.lokal || 'Utama'})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="flex-1">
         {loading ? (
           <div className="flex justify-center mt-20">
-            <div className="w-8 h-8 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
+            <div className="w-8 h-8 border-4 border-slate-200 border-t-sky-500 rounded-full animate-spin"></div>
           </div>
         ) : error ? (
           <div className="mt-20 flex flex-col items-center px-6">
@@ -103,41 +148,39 @@ export const GuruPresensi = () => {
           </div>
         ) : santriList.length === 0 ? (
           <div className="mt-20 flex flex-col items-center px-6">
-             <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4 border-2 border-white shadow-sm">
-                <FileSpreadsheet className="text-blue-500 w-8 h-8" />
+             <div className="w-16 h-16 bg-sky-50 rounded-full flex items-center justify-center mb-4 border-2 border-white shadow-sm">
+                <FileSpreadsheet className="text-sky-500 w-8 h-8" />
              </div>
              <h2 className="text-slate-800 font-bold text-center text-lg mb-2">Belum Ada Santri</h2>
              <p className="text-slate-500 text-center font-medium">Belum ada data santri di kelas ini.</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {santriList.map((santri) => (
-              <div key={santri.id} className={`${neumorphicShadow} rounded-[24px] p-5 border-2`}>
-                <div className="mb-5 flex flex-row justify-between items-center">
-                  <div>
-                    <h3 className="text-slate-800 font-extrabold text-lg">{santri.name}</h3>
-                    <p className="text-slate-400 font-medium text-xs mt-0.5">
-                      Stambuk: <span className="text-slate-500 font-bold">{santri.noStambuk}</span>
-                    </p>
-                  </div>
+              <div key={santri.id} className="premium-card bg-white p-5 border border-slate-200/50 shadow-sm rounded-3xl transition-all duration-300 hover:shadow-md">
+                <div className="mb-4">
+                  <h3 className="text-slate-800 font-extrabold text-base">{santri.name}</h3>
+                  <p className="text-slate-400 font-medium text-xs mt-0.5">
+                    No. Stambuk: <span className="text-slate-600 font-bold">{santri.noStambuk}</span>
+                  </p>
                 </div>
                 
                 <div className="flex flex-row justify-between gap-4">
                   <div className="flex-1">
-                     <p className="text-slate-500 font-extrabold text-[10px] uppercase tracking-wider mb-2 ml-1">Total Izin (Hari)</p>
+                     <p className="text-slate-400 font-extrabold text-[9px] uppercase tracking-widest mb-1.5 ml-1">Total Izin (Hari)</p>
                      <input
                        type="number"
-                       className="w-full bg-[#F1F5F9] rounded-2xl px-4 py-3 text-slate-800 font-bold shadow-inner focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                       className="w-full bg-slate-50 rounded-xl px-4 py-2.5 text-slate-700 font-bold focus:outline-hidden focus:ring-2 focus:ring-sky-500 border border-slate-200 text-sm shadow-inner transition-all"
                        value={santri.izin}
                        onChange={(e) => handleInput(santri.id, 'izin', e.target.value)}
                        placeholder="0"
                      />
                   </div>
                   <div className="flex-1">
-                     <p className="text-slate-500 font-extrabold text-[10px] uppercase tracking-wider mb-2 ml-1">Total Alpha (Hari)</p>
+                     <p className="text-slate-400 font-extrabold text-[9px] uppercase tracking-widest mb-1.5 ml-1">Total Alpha (Hari)</p>
                      <input
                        type="number"
-                       className="w-full bg-[#F1F5F9] rounded-2xl px-4 py-3 text-slate-800 font-bold shadow-inner focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                       className="w-full bg-slate-50 rounded-xl px-4 py-2.5 text-slate-700 font-bold focus:outline-hidden focus:ring-2 focus:ring-sky-500 border border-slate-200 text-sm shadow-inner transition-all"
                        value={santri.alpha}
                        onChange={(e) => handleInput(santri.id, 'alpha', e.target.value)}
                        placeholder="0"
@@ -150,16 +193,18 @@ export const GuruPresensi = () => {
         )}
       </div>
 
-      {/* Premium 3D Save Button */}
+      {/* Save Button */}
       {!loading && !error && santriList.length > 0 && (
-        <div className="sticky bottom-4 mt-8 flex justify-center">
-          <button 
+        <div className="sticky bottom-6 mt-8 flex justify-center z-20">
+          <PremiumButton 
             onClick={submitPresensi}
-            className="w-full max-w-sm bg-blue-600 hover:bg-blue-700 active:scale-95 transition-all h-16 rounded-[24px] flex items-center justify-center overflow-hidden shadow-[0_8px_16px_rgba(37,99,235,0.4)] relative"
+            isLoading={submitting}
+            variant="gold"
+            className="w-full max-w-sm h-14 rounded-2xl flex items-center justify-center font-black text-sm tracking-widest uppercase border border-gold/40 shadow-xl"
+            rightIcon={<Check className="w-5 h-5" />}
           >
-            <div className="absolute top-0 left-0 right-0 h-1/2 bg-white/20 rounded-t-[24px]" />
-            <span className="text-white font-black text-lg tracking-wider relative z-10">SIMPAN ABSENSI</span>
-          </button>
+            SIMPAN ABSENSI
+          </PremiumButton>
         </div>
       )}
     </div>

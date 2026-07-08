@@ -22,12 +22,14 @@ export const getRapotGrid = async (c: Context) => {
   }
 
   const santriIds = santriList.map(s => s.id);
+  const isSemester2 = semester === '2' || semester === 'II';
+  const semFilter = isSemester2 ? ['2', 'II'] : ['1', 'I'];
 
   // Get rapot semester data
   const rapotData = await db.select().from(schema.rapotSemester).where(
     and(
       inArray(schema.rapotSemester.santriId, santriIds),
-      eq(schema.rapotSemester.semester, semester),
+      inArray(schema.rapotSemester.semester, semFilter),
       eq(schema.rapotSemester.academicYear, year)
     )
   );
@@ -43,6 +45,8 @@ export const getRapotGrid = async (c: Context) => {
       kitabId: schema.rapotNilai.kitabId,
       kuartal1Score: schema.rapotNilai.kuartal1Score,
       kuartal2Score: schema.rapotNilai.kuartal2Score,
+      kuartal3Score: schema.rapotNilai.kuartal3Score,
+      kuartal4Score: schema.rapotNilai.kuartal4Score,
       khoshScore: schema.rapotNilai.khoshScore,
       kitabName: schema.kitab.name,
     })
@@ -72,8 +76,8 @@ export const getRapotGrid = async (c: Context) => {
       scores: nilai.map(n => ({
         kitabId: n.kitabId,
         kitabName: n.kitabName,
-        tamrinScore: n.kuartal1Score || 0,
-        ujianScore: n.kuartal2Score || 0,
+        tamrinScore: isSemester2 ? (n.kuartal3Score || 0) : (n.kuartal1Score || 0),
+        ujianScore: isSemester2 ? (n.kuartal4Score || 0) : (n.kuartal2Score || 0),
         khoshScore: n.khoshScore || 0
       }))
     };
@@ -94,6 +98,8 @@ export const saveRapotBatch = async (c: Context) => {
   if (!classId || !data || !Array.isArray(data)) {
     return c.json({ success: false, message: 'Invalid payload' }, 400);
   }
+
+  const isSemester2 = semester === '2' || semester === 'II';
 
   for (const item of data) {
     let rapotId = item.rapotId;
@@ -148,8 +154,10 @@ export const saveRapotBatch = async (c: Context) => {
           id: 'rpn_' + Date.now() + '_' + Math.random().toString(36).substring(7),
           rapotId: rapotId,
           kitabId: n.kitabId,
-          kuartal1Score: tamrin,
-          kuartal2Score: ujian,
+          kuartal1Score: isSemester2 ? null : tamrin,
+          kuartal2Score: isSemester2 ? null : ujian,
+          kuartal3Score: isSemester2 ? tamrin : null,
+          kuartal4Score: isSemester2 ? ujian : null,
           khoshScore: khosh,
         };
       });

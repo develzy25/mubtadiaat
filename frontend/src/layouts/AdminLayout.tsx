@@ -118,7 +118,7 @@ export const AdminLayout = () => {
         
         {/* Sidebar Header (Logo) */}
         <div className="p-6 border-b border-slate-800/80 flex items-center justify-between relative overflow-hidden">
-          <div className="absolute inset-0 bg-linear-to-br from-blue-600/20 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-linear-to-br from-sky-600/10 to-transparent pointer-events-none" />
           
           <motion.div 
             initial={{ opacity: 0, x: -20 }}
@@ -135,7 +135,7 @@ export const AdminLayout = () => {
             </div>
             <div>
               <h1 className="font-extrabold text-base tracking-tight text-white drop-shadow-md">e-Mubtadi'aat</h1>
-              <p className="text-[10px] text-blue-400 font-black uppercase tracking-widest mt-0.5">Portal Admin</p>
+              <p className="text-[10px] text-sky-400 font-black uppercase tracking-widest mt-0.5">Portal Admin</p>
             </div>
           </motion.div>
           <button onClick={() => setSidebarOpen(false)} className="md:hidden text-slate-400 hover:text-white relative z-10">
@@ -179,7 +179,7 @@ export const AdminLayout = () => {
                     {(isActive || isChildActive) && (
                       <motion.div 
                         layoutId="activeNavBubble"
-                        className="absolute inset-0 bg-linear-to-r from-blue-600 to-indigo-600 rounded-xl shadow-[0_0_20px_rgba(79,70,229,0.3),inset_0_2px_4px_rgba(255,255,255,0.2)]"
+                        className="absolute inset-0 bg-linear-to-r from-sky-500 to-sky-600 rounded-xl shadow-[0_0_20px_rgba(14,165,233,0.3),inset_0_2px_4px_rgba(255,255,255,0.2)]"
                         initial={false}
                         transition={{ type: "spring", stiffness: 300, damping: 30 }}
                       />
@@ -226,21 +226,21 @@ export const AdminLayout = () => {
                               onClick={() => setSidebarOpen(false)}
                               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 relative group overflow-hidden ${
                                 isChildItemActive
-                                  ? 'text-blue-300'
+                                  ? 'text-sky-300'
                                   : 'text-slate-400 hover:text-slate-200'
                               }`}
                             >
                               {isChildItemActive && (
                                 <motion.div 
                                   layoutId="activeChildBubble"
-                                  className="absolute inset-0 bg-blue-500/10 border border-blue-500/20 rounded-xl"
+                                  className="absolute inset-0 bg-sky-500/10 border border-sky-500/20 rounded-xl"
                                 />
                               )}
                               
                               <div className="relative z-10 flex items-center gap-3">
                                 <motion.div 
                                   whileHover={{ scale: 1.2, rotate: 5 }}
-                                  className={isChildItemActive ? 'text-blue-400' : 'text-slate-500 group-hover:text-slate-300'}
+                                  className={isChildItemActive ? 'text-sky-400' : 'text-slate-500 group-hover:text-slate-300'}
                                 >
                                   {child.icon}
                                 </motion.div>
@@ -263,7 +263,7 @@ export const AdminLayout = () => {
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden relative">
         
         {/* Modern 3D Header */}
-        <header className="bg-white/70 backdrop-blur-xl border-b border-white/40 px-6 py-4 flex items-center justify-between shrink-0 shadow-[0_4px_30px_rgba(0,0,0,0.03)] z-40 relative">
+        <header className="bg-white/85 backdrop-blur-xl border-b border-slate-200/50 px-6 py-4 flex items-center justify-between shrink-0 shadow-[0_4px_30px_rgba(0,0,0,0.02)] z-40 relative">
           
           <div className="flex items-center gap-3">
             <button 
@@ -293,13 +293,13 @@ export const AdminLayout = () => {
             <motion.div 
               animate={{
                 boxShadow: searchFocused 
-                  ? '0 10px 25px -5px rgba(79, 70, 229, 0.2), 0 8px 10px -6px rgba(79, 70, 229, 0.1), inset 0 2px 4px rgba(255,255,255,0.8)' 
-                  : '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05), inset 0 2px 4px rgba(255,255,255,0.8)'
+                  ? '0 10px 25px -5px rgba(14, 165, 233, 0.25), 0 8px 10px -6px rgba(14, 165, 233, 0.15), inset 0 2px 4px rgba(255,255,255,0.8)' 
+                  : '0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 2px 4px -2px rgba(0, 0, 0, 0.03), inset 0 2px 4px rgba(255,255,255,0.8)'
               }}
               className="relative w-full bg-slate-50/50 backdrop-blur-md border border-white/60 rounded-full overflow-hidden transition-colors duration-300 hover:bg-white"
             >
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Search className={`w-5 h-5 transition-colors duration-300 ${searchFocused ? 'text-indigo-500' : 'text-slate-400'}`} />
+                <Search className={`w-5 h-5 transition-colors duration-300 ${searchFocused ? 'text-sky-500' : 'text-slate-400'}`} />
               </div>
               <input
                 type="text"
@@ -316,7 +316,7 @@ export const AdminLayout = () => {
             
             {/* Realtime Clock */}
             <div className="hidden lg:flex items-center gap-2 px-4 py-2 bg-slate-100/50 rounded-xl border border-white shadow-inner">
-              <Clock className="w-4 h-4 text-indigo-500" />
+              <Clock className="w-4 h-4 text-sky-500" />
               <span className="text-xs font-black text-slate-600 tracking-wide">
                 {formatDateTime(currentTime)}
               </span>
@@ -339,7 +339,7 @@ export const AdminLayout = () => {
             {/* User Profile */}
             <div className="flex items-center gap-3 cursor-pointer group">
               <div className="text-right hidden sm:block">
-                <p className="text-sm font-black text-slate-800 leading-tight group-hover:text-indigo-600 transition-colors">
+                <p className="text-sm font-black text-slate-800 leading-tight group-hover:text-sky-600 transition-colors">
                   {sessionData?.user?.name || 'Administrator'}
                 </p>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
@@ -348,9 +348,9 @@ export const AdminLayout = () => {
               </div>
               
               <div className="relative">
-                <div className="w-11 h-11 rounded-full bg-linear-to-br from-indigo-500 to-purple-600 p-[2px] shadow-[0_4px_10px_rgba(79,70,229,0.3)] transform transition-transform group-hover:scale-105 group-active:scale-95">
+                <div className="w-11 h-11 rounded-full bg-linear-to-br from-sky-400 to-sky-600 p-[2px] shadow-[0_4px_10px_rgba(14,165,233,0.3)] transform transition-transform group-hover:scale-105 group-active:scale-95">
                   <div className="w-full h-full rounded-full bg-white flex items-center justify-center border-2 border-transparent overflow-hidden">
-                    <UserCircle className="w-full h-full text-indigo-600 bg-indigo-50" />
+                    <UserCircle className="w-full h-full text-sky-600 bg-sky-50" />
                   </div>
                 </div>
                 {/* Logout Button */}
@@ -369,7 +369,7 @@ export const AdminLayout = () => {
 
         {/* View Content (Scrollable) */}
         <main className="flex-1 overflow-y-auto p-6 relative">
-          <div className="absolute top-0 left-0 w-full h-96 bg-linear-to-b from-indigo-50/50 to-transparent pointer-events-none -z-10" />
+          <div className="absolute top-0 left-0 w-full h-96 bg-linear-to-b from-sky-50/20 to-transparent pointer-events-none -z-10" />
           
           <AnimatePresence mode="wait">
             <motion.div

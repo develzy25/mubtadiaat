@@ -19,6 +19,12 @@ export const fetchKelasMustahiq = async () => {
   return await res.json();
 };
 
+export const fetchJadwalMengajar = async () => {
+  const res = await fetch(`${API_URL}/mobile/jadwal`, { headers: getHeaders() });
+  if (!res.ok) throw new Error('Failed to fetch jadwal');
+  return await res.json();
+};
+
 export const fetchPresensiHarian = async (classId: string) => {
   const res = await fetch(`${API_URL}/mobile/presensi/${classId}`, { headers: getHeaders() });
   if (!res.ok) throw new Error('Failed to fetch presensi');

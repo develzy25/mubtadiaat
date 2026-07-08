@@ -1,7 +1,7 @@
 import { Context } from 'hono';
 import { db } from '../db/index';
 import * as schema from '../db/schema';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, sql, inArray } from 'drizzle-orm';
 
 export const getKelasMustahiq = async (c: Context) => {
   // In real implementation, get user ID from token middleware
@@ -33,6 +33,8 @@ export const getJadwalMengajar = async (c: Context) => {
     id: schema.jadwalPelajaran.id,
     hari: schema.jadwalPelajaran.hari,
     sesi: schema.jadwalPelajaran.sesi,
+    kelasId: schema.jadwalPelajaran.kelasId,
+    kitabId: schema.jadwalPelajaran.kitabId,
     kelas: schema.kelas.bagian,
     kitab: schema.kitab.name,
     tingkat: schema.tingkat.name,
@@ -50,7 +52,9 @@ export const getJadwalMengajar = async (c: Context) => {
     hari: j.hari,
     waktu: j.sesi === 'Sesi 1' ? '07:30 - 08:30' : '08:30 - 09:30',
     kelas: `Kelas ${j.tingkat} - ${j.kelas}`,
+    kelasId: j.kelasId,
     kitab: j.kitab,
+    kitabId: j.kitabId,
     lokal: j.lokal
   }));
 
@@ -271,13 +275,19 @@ export const getPenilaianKelas = async (c: Context) => {
   if (!classId) return c.json({ success: false, message: 'Class ID required' }, 400);
   if (!mapel || !kuartal) return c.json({ success: false, message: 'Mapel and Kuartal required' }, 400);
 
+  const semFilter = (kuartal === '1' || kuartal === '2') ? ['1', 'I'] : ['2', 'II'];
+
   try {
     const santriList = await db.select().from(schema.santri).where(eq(schema.santri.kelasId, classId));
     
     const data = [];
     for (const s of santriList) {
       const rapot = await db.select().from(schema.rapotSemester)
-        .where(and(eq(schema.rapotSemester.santriId, s.id), eq(schema.rapotSemester.kelasId, classId)))
+        .where(and(
+          eq(schema.rapotSemester.santriId, s.id), 
+          eq(schema.rapotSemester.kelasId, classId),
+          inArray(schema.rapotSemester.semester, semFilter)
+        ))
         .limit(1);
 
       let nilai = null;
@@ -317,19 +327,27 @@ export const savePenilaianKuartal = async (c: Context) => {
     const setting = await db.select().from(schema.settings).where(eq(schema.settings.id, 'global')).get();
     if (setting) activeYear = setting.activeAcademicYear;
 
+    const kuartalNum = Number(body.kuartal);
+    const semesterVal = (kuartalNum === 1 || kuartalNum === 2) ? '1' : '2';
+    const semFilter = (kuartalNum === 1 || kuartalNum === 2) ? ['1', 'I'] : ['2', 'II'];
+
     for (const score of body.scores) {
       let rapot = await db.select().from(schema.rapotSemester)
-        .where(and(eq(schema.rapotSemester.santriId, score.santri_id), eq(schema.rapotSemester.kelasId, body.classId)))
+        .where(and(
+          eq(schema.rapotSemester.santriId, score.santri_id), 
+          eq(schema.rapotSemester.kelasId, body.classId),
+          inArray(schema.rapotSemester.semester, semFilter)
+        ))
         .limit(1);
       
       let rapotId;
       if (rapot.length === 0) {
-        rapotId = Math.random().toString(36).substring(2, 15);
+        rapotId = 'rpt_' + Math.random().toString(36).substring(2, 15);
         await db.insert(schema.rapotSemester).values({
           id: rapotId,
           santriId: score.santri_id,
           kelasId: body.classId,
-          semester: '1',
+          semester: semesterVal,
           academicYear: activeYear,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
@@ -338,21 +356,21 @@ export const savePenilaianKuartal = async (c: Context) => {
         rapotId = rapot[0].id;
       }
 
-      const kitabId = body.mapelId; 
+      const kitabId = body.mapelId || body.mapel; 
 
       let rn = await db.select().from(schema.rapotNilai)
         .where(and(eq(schema.rapotNilai.rapotId, rapotId), eq(schema.rapotNilai.kitabId, kitabId)))
         .limit(1);
 
       const updateData: any = { updatedAt: new Date().toISOString() };
-      if (body.kuartal === 1) updateData.kuartal1Score = score.nilai;
-      else if (body.kuartal === 2) updateData.kuartal2Score = score.nilai;
-      else if (body.kuartal === 3) updateData.kuartal3Score = score.nilai;
-      else if (body.kuartal === 4) updateData.kuartal4Score = score.nilai;
+      if (kuartalNum === 1) updateData.kuartal1Score = score.nilai;
+      else if (kuartalNum === 2) updateData.kuartal2Score = score.nilai;
+      else if (kuartalNum === 3) updateData.kuartal3Score = score.nilai;
+      else if (kuartalNum === 4) updateData.kuartal4Score = score.nilai;
 
       if (rn.length === 0) {
         await db.insert(schema.rapotNilai).values({
-          id: Math.random().toString(36).substring(2, 15),
+          id: 'rpn_' + Math.random().toString(36).substring(2, 15),
           rapotId: rapotId,
           kitabId: kitabId,
           ...updateData,

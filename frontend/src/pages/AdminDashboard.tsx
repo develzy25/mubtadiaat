@@ -351,8 +351,8 @@ export const AdminDashboard = () => {
             </div>
 
             <Link 
-              to="/admin/logs" 
-              className="mt-6 w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-50 hover:bg-slate-100 text-indigo-600 font-black text-[10px] uppercase tracking-widest transition-all border border-slate-200/50 hover:border-indigo-200"
+              to="/logs" 
+              className="mt-6 w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-50 hover:bg-slate-100 text-sky-600 font-black text-[10px] uppercase tracking-widest transition-all border border-slate-200/50 hover:border-sky-200"
             >
               Lihat Selengkapnya
               <ArrowUpRight className="w-3.5 h-3.5" />

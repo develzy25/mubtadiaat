@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate, useOutlet } from 'react-router';
 import { 
-  Home, 
   CalendarCheck, 
   FileSpreadsheet, 
   Activity, 
   LogOut,
-  FileCheck2
+  FileCheck2,
+  Menu,
+  X,
+  Clock,
+  UserCircle,
+  Home
 } from 'lucide-react';
 import { useSession, signOut } from '../lib/auth.client';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,6 +18,8 @@ import { OfflineSyncManager } from '../components/OfflineSyncManager';
 
 export const GuruLayout = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
   
   const { data: sessionData } = useSession();
   const location = useLocation();
@@ -24,11 +30,13 @@ export const GuruLayout = () => {
   const isMonitoring = role === 2 || role === 3; // Mundzir & Mufatish
 
   useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     const onOnline = () => setIsOnline(true);
     const onOffline = () => setIsOnline(false);
     window.addEventListener('online', onOnline);
     window.addEventListener('offline', onOffline);
     return () => {
+      clearInterval(timer);
       window.removeEventListener('online', onOnline);
       window.removeEventListener('offline', onOffline);
     };
@@ -39,7 +47,13 @@ export const GuruLayout = () => {
     navigate('/login');
   };
 
-  // Define Bottom Nav items based on role
+  const formatDateTime = (date: Date) => {
+    const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+    return `${days[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()} • ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`;
+  };
+
+  // Define Nav items based on role
   const getNavItems = () => {
     const items = [
       { name: 'Beranda', path: '/guru/dashboard', icon: <Home className="w-5 h-5" /> },
@@ -47,12 +61,12 @@ export const GuruLayout = () => {
 
     if (!isMonitoring) {
       // Mustahiq (Role 4)
-      items.push({ name: 'Absensi', path: '/guru/presensi', icon: <CalendarCheck className="w-5 h-5" /> });
-      items.push({ name: 'Nilai', path: '/guru/penilaian', icon: <FileSpreadsheet className="w-5 h-5" /> });
+      items.push({ name: 'Presensi Siswa', path: '/guru/presensi', icon: <CalendarCheck className="w-5 h-5" /> });
+      items.push({ name: 'Input Nilai', path: '/guru/penilaian', icon: <FileSpreadsheet className="w-5 h-5" /> });
     } else {
       // Mundzir & Mufatish (Role 2 & 3)
-      items.push({ name: 'Laporan', path: '/guru/rekap', icon: <Activity className="w-5 h-5" /> });
-      items.push({ name: 'Finalisasi', path: '/guru/finalisasi', icon: <FileCheck2 className="w-5 h-5" /> });
+      items.push({ name: 'Laporan Rekap', path: '/guru/rekap', icon: <Activity className="w-5 h-5" /> });
+      items.push({ name: 'Finalisasi Nilai', path: '/guru/finalisasi', icon: <FileCheck2 className="w-5 h-5" /> });
     }
 
     return items;
@@ -60,90 +74,185 @@ export const GuruLayout = () => {
 
   const navItems = getNavItems();
 
-  return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans antialiased text-slate-800">
-      
-      {/* Top Header Mobile Style */}
-      <header className="bg-white px-5 py-4 flex items-center justify-between shadow-sm z-40 sticky top-0">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-linear-to-tr from-blue-600 to-indigo-600 flex items-center justify-center p-1 shadow-[0_4px_10px_rgba(37,99,235,0.3)]">
-            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain filter drop-shadow-sm" />
-          </div>
-          <div>
-            <h1 className="font-extrabold text-sm tracking-tight text-slate-800">e-Mubtadi'aat</h1>
-            <p className="text-[10px] text-blue-600 font-black uppercase tracking-widest mt-0.5">
-              Portal {role === 2 ? 'Mundzir' : role === 3 ? 'Mufatish' : 'Mustahiq'}
-            </p>
-          </div>
-        </div>
+  const getPortalTitle = () => {
+    if (role === 2) return 'Portal Mundzir';
+    if (role === 3) return 'Portal Mufatish';
+    return 'Portal Pengajar';
+  };
 
-        <div className="flex items-center gap-4">
-          <div className="hidden sm:flex flex-col items-end">
-            <p className="text-xs font-bold text-slate-800">{sessionData?.user?.name}</p>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">{isOnline ? 'Online' : 'Offline'}</span>
-            </div>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-rose-500 shadow-sm border border-slate-100 hover:bg-rose-50 active:scale-95 transition-all"
+  return (
+    <div className="min-h-screen bg-slate-50 flex text-slate-800 font-sans antialiased overflow-hidden">
+      
+      {/* Sidebar for Desktop */}
+      <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 text-white flex flex-col transition-all duration-300 shadow-[20px_0_40px_rgba(0,0,0,0.15)] border-r border-slate-700/50 md:translate-x-0 md:static md:h-screen ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        
+        {/* Sidebar Header (Logo) */}
+        <div className="p-6 border-b border-slate-800/80 flex items-center justify-between relative overflow-hidden">
+          <div className="absolute inset-0 bg-linear-to-br from-sky-600/10 to-transparent pointer-events-none" />
+          
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+            className="flex items-center gap-4 relative z-10"
           >
-            <LogOut className="w-4 h-4" />
+            <div className="w-12 h-12 rounded-2xl bg-linear-to-tr from-slate-800 to-slate-700 border border-slate-600 flex items-center justify-center p-2 shadow-[inset_0_2px_4px_rgba(255,255,255,0.1),0_4px_10px_rgba(0,0,0,0.3)]">
+              <img 
+                src="/logo.png" 
+                alt="Logo" 
+                className="w-full h-full object-contain filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
+              />
+            </div>
+            <div>
+              <h1 className="font-extrabold text-base tracking-tight text-white drop-shadow-md">e-Mubtadi'aat</h1>
+              <p className="text-[10px] text-sky-400 font-black uppercase tracking-widest mt-0.5">{getPortalTitle()}</p>
+            </div>
+          </motion.div>
+          <button onClick={() => setSidebarOpen(false)} className="md:hidden text-slate-400 hover:text-white relative z-10">
+            <X className="w-6 h-6" />
           </button>
         </div>
-      </header>
 
-      {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto pb-24 relative">
-        <div className="absolute top-0 left-0 w-full h-40 bg-linear-to-b from-blue-50/50 to-transparent pointer-events-none -z-10" />
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={location.pathname}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 10 }}
-            transition={{ duration: 0.2 }}
-            className="h-full p-4 md:p-6 max-w-5xl mx-auto"
-          >
-            {outlet}
-          </motion.div>
-        </AnimatePresence>
-      </main>
+        {/* Navigation Items */}
+        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto custom-scrollbar relative">
+          {navItems.map((item, idx) => {
+            const isActive = location.pathname === item.path;
 
-      {/* Bottom Navigation Bar (Glassmorphism + iOS Style) */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 flex justify-center pb-4 px-4 pointer-events-none">
-        <div className="bg-white/80 backdrop-blur-xl border border-white shadow-[0_10px_40px_rgba(0,0,0,0.08)] rounded-3xl p-2 flex items-center justify-around w-full max-w-md pointer-events-auto">
-          {navItems.map((item) => {
-            const isActive = location.pathname.includes(item.path);
             return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className="relative flex flex-col items-center justify-center w-16 h-14 group"
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: idx * 0.1 }}
+                key={item.path} 
+                className="mb-1"
               >
-                {isActive && (
-                  <motion.div
-                    layoutId="bottomNavBubble"
-                    className="absolute inset-0 bg-blue-50 rounded-2xl -z-10"
-                    transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                  />
-                )}
-                <motion.div 
-                  whileTap={{ scale: 0.9 }}
-                  className={`mb-1 transition-colors ${isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-blue-400'}`}
+                <Link
+                  to={item.path}
+                  onClick={() => setSidebarOpen(false)}
+                  className={`flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold transition-all duration-300 relative overflow-hidden group ${
+                    isActive ? 'text-white font-extrabold shadow-md' : 'text-slate-400 hover:text-slate-100'
+                  }`}
                 >
-                  {item.icon}
-                </motion.div>
-                <span className={`text-[9px] font-bold tracking-wide transition-colors ${isActive ? 'text-blue-700' : 'text-slate-500'}`}>
-                  {item.name}
-                </span>
-              </Link>
+                  {isActive && (
+                    <motion.div 
+                      layoutId="activeNavBubbleGuru"
+                      className="absolute inset-0 bg-linear-to-r from-sky-500 to-sky-600 rounded-xl shadow-[0_0_20px_rgba(14,165,233,0.3),inset_0_2px_4px_rgba(255,255,255,0.2)]"
+                      initial={false}
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    />
+                  )}
+                  
+                  {!isActive && (
+                    <div className="absolute inset-0 bg-slate-800/0 group-hover:bg-slate-800/80 rounded-xl transition-colors duration-300" />
+                  )}
+
+                  <div className="relative z-10 flex items-center gap-3">
+                    <span className={isActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-300'}>
+                      {item.icon}
+                    </span>
+                    <span className="tracking-wide">{item.name}</span>
+                  </div>
+                </Link>
+              </motion.div>
             );
           })}
-        </div>
-      </div>
+        </nav>
+      </aside>
 
+      {/* Main Content Pane */}
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden relative">
+        
+        {/* Modern Header */}
+        <header className="bg-white/85 backdrop-blur-xl border-b border-slate-200/50 px-6 py-4 flex items-center justify-between shrink-0 shadow-[0_4px_30px_rgba(0,0,0,0.02)] z-40 relative">
+          
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setSidebarOpen(true)} 
+              className="md:hidden p-2 rounded-xl bg-white shadow-[0_2px_10px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,1)] text-slate-600 hover:bg-slate-50 transition-all active:scale-95"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            
+            <h2 className="text-lg font-black tracking-tight text-slate-800 uppercase hidden md:block">
+              {navItems.find(item => location.pathname === item.path)?.name || 'Dasbor Pengajar'}
+            </h2>
+          </div>
+
+          {/* Right Area: Time, Status, User */}
+          <div className="flex items-center gap-5">
+            
+            {/* Realtime Clock */}
+            <div className="hidden lg:flex items-center gap-2 px-4 py-2 bg-slate-100/50 rounded-xl border border-white shadow-inner">
+              <Clock className="w-4 h-4 text-sky-500" />
+              <span className="text-xs font-black text-slate-600 tracking-wide">
+                {formatDateTime(currentTime)}
+              </span>
+            </div>
+
+            {/* Online Status */}
+            <div className={`flex items-center gap-2 px-3 py-2 border rounded-xl shadow-[inset_0_1px_0_rgba(255,255,255,1)] ${isOnline ? 'bg-emerald-50 border-emerald-100/50' : 'bg-amber-50 border-amber-100/50'}`}>
+              <span className="relative flex h-3 w-3">
+                {isOnline && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>}
+                <span className={`relative inline-flex rounded-full h-3 w-3 ${isOnline ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
+              </span>
+              <span className={`text-[10px] font-black uppercase tracking-widest hidden sm:block ${isOnline ? 'text-emerald-700' : 'text-amber-700'}`}>
+                {isOnline ? 'Online' : 'Offline'}
+              </span>
+            </div>
+
+            {/* Divider */}
+            <div className="w-px h-8 bg-slate-200 hidden sm:block" />
+
+            {/* User Profile */}
+            <div className="flex items-center gap-3 cursor-pointer group">
+              <div className="text-right hidden sm:block">
+                <p className="text-sm font-black text-slate-800 leading-tight group-hover:text-sky-600 transition-colors">
+                  {sessionData?.user?.name || 'Mustahiq'}
+                </p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  {getPortalTitle()}
+                </p>
+              </div>
+              
+              <div className="relative">
+                <div className="w-11 h-11 rounded-full bg-linear-to-br from-sky-400 to-sky-600 p-[2px] shadow-[0_4px_10px_rgba(14,165,233,0.3)] transform transition-transform group-hover:scale-105 group-active:scale-95">
+                  <div className="w-full h-full rounded-full bg-white flex items-center justify-center border-2 border-transparent overflow-hidden">
+                    <UserCircle className="w-full h-full text-sky-600 bg-sky-50" />
+                  </div>
+                </div>
+                {/* Logout Button */}
+                <button
+                  onClick={handleLogout}
+                  title="Keluar Sistem"
+                  className="absolute -bottom-2 -right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center text-rose-500 shadow-md border border-slate-100 hover:bg-rose-50 hover:scale-110 transition-all"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </header>
+
+        {/* View Content (Scrollable) */}
+        <main className="flex-1 overflow-y-auto p-6 relative">
+          <div className="absolute top-0 left-0 w-full h-96 bg-linear-to-b from-sky-50/20 to-transparent pointer-events-none -z-10" />
+          
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3, type: "spring", stiffness: 200, damping: 20 }}
+              className="h-full"
+            >
+              {outlet}
+            </motion.div>
+          </AnimatePresence>
+        </main>
+      </div>
+      
       <OfflineSyncManager />
     </div>
   );

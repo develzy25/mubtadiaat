@@ -3,7 +3,18 @@ import * as adminController from '../controllers/admin.controller';
 import * as jadwalController from '../controllers/jadwal.controller';
 import * as rapotController from '../controllers/rapot.controller';
 
-const admin = new Hono();
+import { authMiddleware } from '../middlewares/auth.middleware.js';
+
+const admin = new Hono<{ Variables: { userRole: number; userId: string; user: any } }>();
+
+admin.use('*', authMiddleware);
+admin.use('*', async (c, next) => {
+  const role = c.get('userRole');
+  if (role !== 1) {
+    return c.json({ success: false, message: 'Forbidden: Admin access required' }, 403);
+  }
+  await next();
+});
 
 // Auth & Users
 import { seedTsanawiyah } from '../db/seed_tsanawiyah';

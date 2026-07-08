@@ -172,7 +172,7 @@ export const AdminJadwalPage = () => {
 
   const handleDownloadTemplate = async () => {
     try {
-      await generateExcelTemplate(JADWAL_COLUMNS, 'Template_Jadwal_Pelajaran.xlsx', 'Jadwal');
+      await generateExcelTemplate(JADWAL_COLUMNS, 'Template_Jadwal_Mubtadiat.xlsx', 'Jadwal');
       showToast('Template berhasil didownload', 'success');
     } catch (err) {
       showToast('Gagal mendownload template', 'error');
@@ -185,7 +185,7 @@ export const AdminJadwalPage = () => {
       return;
     }
     try {
-      await exportToExcel(scheduleItems, JADWAL_COLUMNS, 'Data_Jadwal_Pelajaran.xlsx', 'Jadwal');
+      await exportToExcel(scheduleItems, JADWAL_COLUMNS, 'Data_Jadwal_Mubtadiat.xlsx', 'Jadwal');
       showToast('Data jadwal berhasil diexport', 'success');
     } catch (err) {
       showToast('Gagal mengexport data', 'error');
