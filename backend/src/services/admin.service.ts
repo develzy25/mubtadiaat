@@ -16,9 +16,29 @@ export class AdminService {
     const santriCount = await adminRepository.getTableCount('santri');
     const asatidz = await adminRepository.getTableCount('asatidz');
     const recentActivities = await adminRepository.getRecentAuditLogs(5);
+
+    // 1. Total nilai terisi
+    let nilaiTerisi = 0;
+    const rns = await db.select().from(schema.rapotNilai);
+    for (const rn of rns) {
+      if (rn.kuartal1Score !== null && rn.kuartal1Score !== undefined) nilaiTerisi++;
+      if (rn.kuartal2Score !== null && rn.kuartal2Score !== undefined) nilaiTerisi++;
+      if (rn.kuartal3Score !== null && rn.kuartal3Score !== undefined) nilaiTerisi++;
+      if (rn.kuartal4Score !== null && rn.kuartal4Score !== undefined) nilaiTerisi++;
+    }
+
+    // 2. Kelas yang sudah final
+    const rapots = await db.select().from(schema.rapotSemester);
+    const finalizedClassIds = new Set(
+      rapots.filter(r => r.isFinalized).map(r => r.kelasId)
+    );
+    const kelasFinal = finalizedClassIds.size;
     
     return {
-      metrics: { active, boyong, cuti, classes, usersCount, kamarCount, santriCount, asatidz },
+      metrics: { 
+        active, boyong, cuti, classes, usersCount, kamarCount, santriCount, asatidz,
+        nilaiTerisi, kelasFinal
+      },
       recentActivities,
       attendanceTrends: []
     };
@@ -212,6 +232,76 @@ export class AdminService {
   }
   async unlockRapot(id: string) {
     await adminRepository.update('rapotSemester', id, { isFinalized: false });
+  }
+  async getMonitoringData() {
+    // 1. Progres Penilaian per Kelas
+    const kelasList = await db.select({
+      id: schema.kelas.id,
+      bagian: schema.kelas.bagian,
+      lokal: schema.kelas.lokal,
+      mustahiqName: schema.asatidz.name,
+      tingkatName: schema.tingkat.name,
+      jenjangName: schema.jenjang.name,
+      tingkatId: schema.kelas.tingkatId,
+    })
+    .from(schema.kelas)
+    .leftJoin(schema.asatidz, eq(schema.kelas.mustahiqId, schema.asatidz.id))
+    .leftJoin(schema.tingkat, eq(schema.kelas.tingkatId, schema.tingkat.id))
+    .leftJoin(schema.jenjang, eq(schema.tingkat.jenjangId, schema.jenjang.id));
+
+    const result = [];
+    for (const k of kelasList) {
+      // count total santri
+      const [santriCountObj] = await db.select({ count: count() })
+        .from(schema.santri)
+        .where(eq(schema.santri.kelasId, k.id));
+      const totalSantri = santriCountObj.count;
+
+      // check if finalized
+      const rapotList = await db.select().from(schema.rapotSemester).where(eq(schema.rapotSemester.kelasId, k.id));
+      const isFinalized = rapotList.length > 0 && rapotList.every(r => r.isFinalized);
+      
+      // count filled grades
+      let filledGradesCount = 0;
+      let totalGradesExpected = 0;
+      if (totalSantri > 0) {
+        // get all kitabs for this class
+        const kitabs = await db.select().from(schema.kitab).where(eq(schema.kitab.tingkatId, k.tingkatId || ''));
+        totalGradesExpected = totalSantri * kitabs.length * 4; // 4 kuartal
+        
+        // count actual filled scores
+        for (const r of rapotList) {
+          const rns = await db.select().from(schema.rapotNilai).where(eq(schema.rapotNilai.rapotId, r.id));
+          for (const rn of rns) {
+            if (rn.kuartal1Score !== null && rn.kuartal1Score !== undefined) filledGradesCount++;
+            if (rn.kuartal2Score !== null && rn.kuartal2Score !== undefined) filledGradesCount++;
+            if (rn.kuartal3Score !== null && rn.kuartal3Score !== undefined) filledGradesCount++;
+            if (rn.kuartal4Score !== null && rn.kuartal4Score !== undefined) filledGradesCount++;
+          }
+        }
+      }
+
+      // class status
+      let status = 'Draft';
+      if (isFinalized) {
+        status = 'SUDAH FINAL';
+      } else if (filledGradesCount > 0 && filledGradesCount >= totalGradesExpected) {
+        status = 'Siap Finalisasi';
+      } else if (filledGradesCount > 0) {
+        status = 'Progress';
+      }
+
+      result.push({
+        id: k.id,
+        name: k.jenjangName ? `${k.jenjangName} - ${k.tingkatName} ${k.bagian}` : `Kelas ${k.bagian}`,
+        wali: k.mustahiqName || 'Belum ditentukan',
+        totalSantri,
+        status,
+        progress: totalGradesExpected > 0 ? Math.round((filledGradesCount / totalGradesExpected) * 100) : 0,
+      });
+    }
+
+    return result;
   }
 }
 

@@ -123,14 +123,10 @@ export const SantriTab = () => {
   // Handle region cascading
   useEffect(() => {
     if (formProvinsi) {
-      // API expects ID. Wait, formProvinsi could be the name if we save the name to DB.
-      // But we need the ID to fetch regencies. Let's assume formProvinsi stores the ID for dropdown.
-      // Actually we should store the ID in the form state so we can fetch regencies.
       fetchRegencies(formProvinsi).then(res => setRegencies(res.success ? res.data : []));
     } else {
       setRegencies([]);
     }
-    setFormKabupaten('');
   }, [formProvinsi]);
 
   useEffect(() => {
@@ -139,7 +135,6 @@ export const SantriTab = () => {
     } else {
       setDistricts([]);
     }
-    setFormKecamatan('');
   }, [formKabupaten]);
 
   useEffect(() => {
@@ -148,7 +143,6 @@ export const SantriTab = () => {
     } else {
       setVillages([]);
     }
-    setFormKelurahan('');
   }, [formKecamatan]);
 
   useEffect(() => {
@@ -202,10 +196,13 @@ export const SantriTab = () => {
     setFormAlamat('');
     setFormKamar('');
     setFormKelas('');
+    setRegencies([]);
+    setDistricts([]);
+    setVillages([]);
     setModalOpen(true);
   };
 
-  const openEditModal = (item: SantriAdmin) => {
+  const openEditModal = async (item: SantriAdmin) => {
     setEditingItem(item);
     setFormName(item.name);
     setFormNik(item.nik || '');
@@ -216,14 +213,38 @@ export const SantriTab = () => {
     setFormNamaAyah(item.namaAyah || '');
     setFormNamaIbu(item.namaIbu || '');
     setFormTahunMasuk(item.tahunMasuk || '');
+    setFormAlamat(item.alamatLengkap || '');
+    setFormKamar(item.kamarId || '');
+    setFormKelas(item.kelasId || '');
+    setFormKodePos(item.kodePos || '');
+
+    // Fetch lists first so select option match works
+    if (item.provinsi) {
+      const regRes = await fetchRegencies(item.provinsi);
+      if (regRes.success) setRegencies(regRes.data);
+    } else {
+      setRegencies([]);
+    }
+
+    if (item.kabupaten) {
+      const distRes = await fetchDistricts(item.kabupaten);
+      if (distRes.success) setDistricts(distRes.data);
+    } else {
+      setDistricts([]);
+    }
+
+    if (item.kecamatan) {
+      const vilRes = await fetchVillages(item.kecamatan);
+      if (vilRes.success) setVillages(vilRes.data);
+    } else {
+      setVillages([]);
+    }
+
     setFormProvinsi(item.provinsi || '');
     setFormKabupaten(item.kabupaten || '');
     setFormKecamatan(item.kecamatan || '');
     setFormKelurahan(item.kelurahan || '');
-    setFormKodePos(item.kodePos || '');
-    setFormAlamat(item.alamatLengkap || '');
-    setFormKamar(item.kamarId || '');
-    setFormKelas(item.kelasId || '');
+    
     setModalOpen(true);
   };
 
@@ -660,7 +681,13 @@ export const SantriTab = () => {
               <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Provinsi</label>
               <PremiumSelect
                 value={formProvinsi}
-                onChange={(e: any) => setFormProvinsi(e.target.value)}
+                onChange={(e: any) => {
+                  setFormProvinsi(e.target.value);
+                  setFormKabupaten('');
+                  setFormKecamatan('');
+                  setFormKelurahan('');
+                  setFormKodePos('');
+                }}
                 className="w-full bg-slate-50"
               >
                 <option value="">Pilih Provinsi</option>
@@ -673,7 +700,12 @@ export const SantriTab = () => {
               <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Kabupaten / Kota</label>
               <PremiumSelect
                 value={formKabupaten}
-                onChange={(e: any) => setFormKabupaten(e.target.value)}
+                onChange={(e: any) => {
+                  setFormKabupaten(e.target.value);
+                  setFormKecamatan('');
+                  setFormKelurahan('');
+                  setFormKodePos('');
+                }}
                 disabled={!formProvinsi}
                 className="w-full bg-slate-50"
               >
@@ -690,7 +722,11 @@ export const SantriTab = () => {
               <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Kecamatan</label>
               <PremiumSelect
                 value={formKecamatan}
-                onChange={(e: any) => setFormKecamatan(e.target.value)}
+                onChange={(e: any) => {
+                  setFormKecamatan(e.target.value);
+                  setFormKelurahan('');
+                  setFormKodePos('');
+                }}
                 disabled={!formKabupaten}
                 className="w-full bg-slate-50"
               >
@@ -704,7 +740,10 @@ export const SantriTab = () => {
               <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Kelurahan</label>
               <PremiumSelect
                 value={formKelurahan}
-                onChange={(e: any) => setFormKelurahan(e.target.value)}
+                onChange={(e: any) => {
+                  setFormKelurahan(e.target.value);
+                  setFormKodePos('');
+                }}
                 disabled={!formKecamatan}
                 className="w-full bg-slate-50"
               >

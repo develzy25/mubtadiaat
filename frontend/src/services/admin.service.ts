@@ -72,6 +72,12 @@ export const fetchStats = async () => {
   return await res.json();
 };
 
+export const fetchMonitoringData = async () => {
+  const res = await fetch(`${API_URL}/admin/monitoring`, { headers: getHeaders() });
+  if (!res.ok) throw new Error('Failed to fetch monitoring data');
+  return await res.json();
+};
+
 // 2. Santri Refs CRUD
 export const fetchSantri = async (filters: { kelasId?: string; status?: string; search?: string }) => {
   const params = new URLSearchParams();

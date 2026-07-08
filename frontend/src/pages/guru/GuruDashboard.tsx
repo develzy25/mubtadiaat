@@ -45,11 +45,6 @@ export const GuruDashboard = () => {
       {/* PROFILE CARD */}
       <div className={`${neumorphicShadow} rounded-[32px] p-6 flex flex-row items-center justify-between`}>
         <div className="flex flex-row items-center flex-1 pr-2">
-          {/* Avatar */}
-          <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center border-4 border-white shadow-sm overflow-hidden mr-4 shrink-0">
-            <img src="https://i.pravatar.cc/150?u=a042581f4e29026704d" className="w-full h-full object-cover" alt="Profile" />
-          </div>
-          
           <div className="flex-1">
             <p className="text-slate-500 text-xs font-medium mb-0.5">Assalamu'alaikum,</p>
             <p className="text-slate-800 text-lg font-extrabold">{userName}</p>

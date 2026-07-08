@@ -95,6 +95,7 @@ admin.post('/rapot/input', rapotController.saveRapotBatch);
 admin.get('/rapot/nilai-am/:classId', rapotController.fetchNilaiAm);
 admin.get('/rapot/rekap/:santriId', rapotController.fetchRekap);
 admin.post('/rapot/finalize', rapotController.finalizeKelas);
+admin.get('/monitoring', adminController.getMonitoringData);
 
 // Fallbacks for Simple CRUD if needed
 admin.get('/akademik/rapot', adminController.getRapotSemester);

@@ -314,3 +314,12 @@ export const unlockRapot = async (c: Context) => {
   await adminService.unlockRapot(id);
   return c.json({ success: true, message: 'Kunci nilai berhasil dibuka.' });
 };
+
+export const getMonitoringData = async (c: Context) => {
+  try {
+    const data = await adminService.getMonitoringData();
+    return c.json({ success: true, data });
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500);
+  }
+};

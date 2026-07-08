@@ -9,10 +9,12 @@ import {
   Activity,
   ArrowUpRight,
   ShieldCheck,
-  Zap
+  Zap,
+  FileSpreadsheet,
+  CheckSquare
 } from 'lucide-react';
 import { motion, AnimatePresence, type Variants } from 'framer-motion';
-import { fetchStats } from '../services/admin.service';
+import { fetchStats, fetchMonitoringData } from '../services/admin.service';
 import { GlassCard } from '../components/ui';
 import { Link } from 'react-router';
 import { useSession } from '../lib/auth.client';
@@ -39,8 +41,10 @@ const LiveEqualizer = () => {
   );
 };
 
+
 export const AdminDashboard = () => {
   const [stats, setStats] = useState<any>(null);
+  const [monitoringData, setMonitoringData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const { data: sessionData } = useSession();
@@ -49,9 +53,15 @@ export const AdminDashboard = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetchStats();
-        if (res.success) {
-          setStats(res.data);
+        const [statsRes, monRes] = await Promise.all([
+          fetchStats(),
+          fetchMonitoringData()
+        ]);
+        if (statsRes.success) {
+          setStats(statsRes.data);
+        }
+        if (monRes.success) {
+          setMonitoringData(monRes.data);
         }
       } catch (err) {
         console.error(err);
@@ -80,7 +90,7 @@ export const AdminDashboard = () => {
   }
 
   const { metrics, recentActivities, attendanceTrends } = stats || {
-    metrics: { active: 0, boyong: 0, cuti: 0, classes: 0 },
+    metrics: { active: 0, boyong: 0, cuti: 0, classes: 0, nilaiTerisi: 0, kelasFinal: 0 },
     recentActivities: [],
     attendanceTrends: []
   };
@@ -117,6 +127,22 @@ export const AdminDashboard = () => {
       icon: <School className="w-6 h-6 text-white" />,
       gradient: 'from-emerald-400 to-teal-500',
       shadow: 'shadow-[0_8px_20px_rgba(16,185,129,0.3)]'
+    },
+    {
+      title: 'Nilai Kuartal Terinput',
+      value: metrics.nilaiTerisi || 0,
+      sub: 'Entri nilai masuk',
+      icon: <FileSpreadsheet className="w-6 h-6 text-white" />,
+      gradient: 'from-sky-400 to-blue-500',
+      shadow: 'shadow-[0_8px_20px_rgba(56,189,248,0.3)]'
+    },
+    {
+      title: 'Kelas Selesai Final',
+      value: metrics.kelasFinal || 0,
+      sub: 'Nilai dikunci & siap cetak',
+      icon: <CheckSquare className="w-6 h-6 text-white" />,
+      gradient: 'from-purple-500 to-indigo-600',
+      shadow: 'shadow-[0_8px_20px_rgba(168,85,247,0.3)]'
     }
   ];
 
@@ -181,7 +207,7 @@ export const AdminDashboard = () => {
       </motion.div>
 
       {/* Cards Row */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+      <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-5">
         {cards.map((card, idx) => (
           <motion.div
             key={idx}
@@ -360,6 +386,71 @@ export const AdminDashboard = () => {
           </GlassCard>
         </motion.div>
       </div>
+
+      {/* Monitoring Penilaian Per Kelas */}
+      <motion.div variants={itemVariants}>
+        <GlassCard className="p-6 border-white/50">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-emerald-100 text-emerald-600 rounded-lg">
+                <FileSpreadsheet className="w-4 h-4" />
+              </div>
+              <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wide">Status Pengisian & Finalisasi Nilai Kelas</h3>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-slate-200/60 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                  <th className="pb-3 pl-2">Kelas</th>
+                  <th className="pb-3">Mustahiq (Wali)</th>
+                  <th className="pb-3 text-center">Santri</th>
+                  <th className="pb-3 text-center">Progres Input</th>
+                  <th className="pb-3 text-right pr-2">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {monitoringData.slice(0, 5).map((m: any) => (
+                  <tr key={m.id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="py-3 pl-2 font-bold text-slate-800">{m.name}</td>
+                    <td className="py-3 font-semibold text-slate-500">{m.wali}</td>
+                    <td className="py-3 text-center font-bold text-slate-700">{m.totalSantri}</td>
+                    <td className="py-3">
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-24 bg-slate-200 rounded-full h-2 overflow-hidden shrink-0">
+                          <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${m.progress}%` }} />
+                        </div>
+                        <span className="font-bold text-slate-700 text-[10px] w-8 text-right">{m.progress}%</span>
+                      </div>
+                    </td>
+                    <td className="py-3 text-right pr-2">
+                      <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                        m.status === 'SUDAH FINAL' 
+                          ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-200' 
+                          : m.status === 'Siap Finalisasi'
+                          ? 'bg-blue-500/10 text-blue-600 border border-blue-200 animate-pulse'
+                          : m.status === 'Progress'
+                          ? 'bg-amber-500/10 text-amber-600 border border-amber-200'
+                          : 'bg-slate-500/10 text-slate-600 border border-slate-200'
+                      }`}>
+                        {m.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                {monitoringData.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="text-center py-8 text-slate-400 italic font-semibold">
+                      Belum ada data monitoring masuk
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </GlassCard>
+      </motion.div>
 
       {/* Quick Menu */}
       <motion.div variants={itemVariants}>
