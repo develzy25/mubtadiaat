@@ -169,12 +169,12 @@ export const AdminAsatidzPage = () => {
     }
     
     if (hasAccount) {
-      msg += `\n\n👤 *Username:* ${item.username}\n🔑 *Sandi:* mubtadiaat123\n\nMugi-mugi pinaringan gampil lan barokah. Matur nuwun.`;
-    } else {
-      msg += `\n\n(Pangapunten, akun panjenengan dereng dipun damelaken dening Admin. Nyuwun tulung dipun tengga sekedhap nggeh).`;
-    }
-    
-    window.open(`https://web.whatsapp.com/send/?phone=${formatted}&text=${encodeURIComponent(msg)}`, '_blank');
+        msg += `\n\n👤 *Username:* ${item.username}\n🔑 *Sandi:* mubtadiaat123\n\nMugi-mugi pinaringan gampil lan barokah. Matur nuwun.`;
+      } else {
+        msg += `\n\n(Pangapunten, akun panjenengan dereng dipun damelaken dening Admin. Nyuwun tulung dipun tengga sekedhap nggeh).`;
+      }
+      
+      window.open(`https://wa.me/${formatted}?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
   const handleDownloadTemplate = async () => {
