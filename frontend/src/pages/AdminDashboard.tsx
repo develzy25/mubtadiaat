@@ -15,6 +15,7 @@ import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import { fetchStats } from '../services/admin.service';
 import { GlassCard } from '../components/ui';
 import { Link } from 'react-router';
+import { useSession } from '../lib/auth.client';
 
 // Simple Equalizer Animation Component
 const LiveEqualizer = () => {
@@ -42,8 +43,8 @@ export const AdminDashboard = () => {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // Simulation of username. In a real app, this comes from AuthContext.
-  const activeUser = "Ustadz Haris"; 
+  const { data: sessionData } = useSession();
+  const activeUser = sessionData?.user?.name || "Administrator"; 
 
   useEffect(() => {
     const load = async () => {
