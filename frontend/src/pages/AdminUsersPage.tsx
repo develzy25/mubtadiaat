@@ -166,7 +166,6 @@ export const AdminUsersPage = () => {
       return;
     }
 
-    const email = `${formUsername}@mubtadiaat.id`;
 
     const payload: Partial<UserAdmin> = {
       name: formName.trim(),
