@@ -27,12 +27,20 @@ import { AdminTahunAjaranPage } from './pages/AdminTahunAjaranPage';
 import { AdminKelulusanPage } from './pages/AdminKelulusanPage';
 import { PrintKelulusanPage } from './pages/PrintKelulusanPage';
 
+// Monitoring Pages
+import { AdminMonitoringPresensi } from './pages/monitoring/AdminMonitoringPresensi';
+import { AdminMonitoringPenilaian } from './pages/monitoring/AdminMonitoringPenilaian';
+import { AdminMonitoringFinalisasi } from './pages/monitoring/AdminMonitoringFinalisasi';
+
 // Guru Pages
 import { GuruDashboard } from './pages/guru/GuruDashboard';
 import { GuruPresensi } from './pages/guru/GuruPresensi';
 import { GuruPenilaian } from './pages/guru/GuruPenilaian';
 import { GuruRekap } from './pages/guru/GuruRekap';
 import { GuruFinalisasi } from './pages/guru/GuruFinalisasi';
+import { GuruJadwalPage } from './pages/guru/GuruJadwalPage';
+import { GuruMonitorPage } from './pages/guru/GuruMonitorPage';
+import { GuruProgresPenilaian } from './pages/guru/GuruProgresPenilaian';
 
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles: number[] }) => {
   const { data: session, isPending, error } = useSession();
@@ -97,6 +105,12 @@ function App() {
             <Route path="/logs" element={<AdminLogsPage />} />
             <Route path="/blok-kamar" element={<AdminBlokKamarPage />} />
             <Route path="/jadwal" element={<AdminJadwalPage />} />
+            
+            {/* Monitoring Pages */}
+            <Route path="/monitoring/presensi" element={<AdminMonitoringPresensi />} />
+            <Route path="/monitoring/penilaian" element={<AdminMonitoringPenilaian />} />
+            <Route path="/monitoring/finalisasi" element={<AdminMonitoringFinalisasi />} />
+
             <Route path="/rapot" element={<AdminRapotPage />} />
             <Route path="/kelulusan" element={<AdminKelulusanPage />} />
             <Route path="/tahun-ajaran" element={<AdminTahunAjaranPage />} />
@@ -111,10 +125,13 @@ function App() {
             {/* Mustahiq Only */}
             <Route path="/guru/presensi" element={<GuruPresensi />} />
             <Route path="/guru/penilaian" element={<GuruPenilaian />} />
+            <Route path="/guru/jadwal" element={<GuruJadwalPage />} />
             
             {/* Monitoring Only */}
             <Route path="/guru/rekap" element={<GuruRekap />} />
             <Route path="/guru/finalisasi" element={<GuruFinalisasi />} />
+            <Route path="/guru/monitor" element={<GuruMonitorPage />} />
+            <Route path="/guru/progres" element={<GuruProgresPenilaian />} />
 
             <Route path="/guru/*" element={<Navigate to="/guru/dashboard" replace />} />
           </Route>

@@ -10,7 +10,9 @@ import {
   X,
   Clock,
   UserCircle,
-  Home
+  Home,
+  BookOpen,
+  Eye
 } from 'lucide-react';
 import { useSession, signOut } from '../lib/auth.client';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -27,7 +29,6 @@ export const GuruLayout = () => {
   const outlet = useOutlet();
 
   const role = (sessionData?.user as any)?.role || 4;
-  const isMonitoring = role === 2 || role === 3; // Mundzir & Mufatish
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -59,13 +60,20 @@ export const GuruLayout = () => {
       { name: 'Beranda', path: '/guru/dashboard', icon: <Home className="w-5 h-5" /> },
     ];
 
-    if (!isMonitoring) {
-      // Mustahiq (Role 4)
+    if (role === 4) {
+      // Mustahiq
       items.push({ name: 'Presensi Siswa', path: '/guru/presensi', icon: <CalendarCheck className="w-5 h-5" /> });
       items.push({ name: 'Input Nilai', path: '/guru/penilaian', icon: <FileSpreadsheet className="w-5 h-5" /> });
-    } else {
-      // Mundzir & Mufatish (Role 2 & 3)
+      items.push({ name: 'Jadwal Mengajar', path: '/guru/jadwal', icon: <BookOpen className="w-5 h-5" /> });
+    } else if (role === 2) {
+      // Mundzir
       items.push({ name: 'Laporan Rekap', path: '/guru/rekap', icon: <Activity className="w-5 h-5" /> });
+      items.push({ name: 'Monitor Kelas', path: '/guru/monitor', icon: <Eye className="w-5 h-5" /> });
+      items.push({ name: 'Finalisasi Nilai', path: '/guru/finalisasi', icon: <FileCheck2 className="w-5 h-5" /> });
+    } else if (role === 3) {
+      // Mufatish
+      items.push({ name: 'Laporan Rekap', path: '/guru/rekap', icon: <Activity className="w-5 h-5" /> });
+      items.push({ name: 'Progres Penilaian', path: '/guru/progres', icon: <FileSpreadsheet className="w-5 h-5" /> });
       items.push({ name: 'Finalisasi Nilai', path: '/guru/finalisasi', icon: <FileCheck2 className="w-5 h-5" /> });
     }
 

@@ -17,7 +17,10 @@ import {
   GraduationCap,
   Calendar,
   FileSpreadsheet,
-  UserCircle
+  UserCircle,
+  Eye,
+  Activity,
+  FileCheck2
 } from 'lucide-react';
 import { useSession, signOut } from '../lib/auth.client';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -92,9 +95,26 @@ export const AdminLayout = () => {
         { name: 'Master Tingkat', path: '/tingkat', icon: <GraduationCap className="w-4 h-4" /> },
         { name: 'Master Kelas (Rombel)', path: '/kelas-rombel', icon: <Building2 className="w-4 h-4" /> },
         { name: 'Master Kitab', path: '/kitab', icon: <BookOpen className="w-4 h-4" /> },
-        { name: 'Jadwal Pelajaran', path: '/jadwal', icon: <Calendar className="w-4 h-4" /> },
+        { name: 'Jadwal Pelajaran', path: '/jadwal', icon: <Calendar className="w-4 h-4" /> }
+      ]
+    },
+    {
+      name: 'Monitoring Pengajar',
+      icon: <Eye className="w-5 h-5" />,
+      groupKey: 'monitoring',
+      children: [
+        { name: 'Rekap Presensi Kelas', path: '/monitoring/presensi', icon: <Activity className="w-4 h-4" /> },
+        { name: 'Progres Penilaian', path: '/monitoring/penilaian', icon: <FileSpreadsheet className="w-4 h-4" /> },
+        { name: 'Status Finalisasi', path: '/monitoring/finalisasi', icon: <FileCheck2 className="w-4 h-4" /> }
+      ]
+    },
+    {
+      name: 'Rapot & Kelulusan',
+      icon: <GraduationCap className="w-5 h-5" />,
+      groupKey: 'rapot_kelulusan',
+      children: [
         { name: 'E-Rapot', path: '/rapot', icon: <FileSpreadsheet className="w-4 h-4" /> },
-        { name: 'Kelulusan', path: '/kelulusan', icon: <GraduationCap className="w-4 h-4" /> }
+        { name: 'Kelulusan & Ijazah', path: '/kelulusan', icon: <GraduationCap className="w-4 h-4" /> }
       ]
     },
     {

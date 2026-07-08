@@ -78,6 +78,16 @@ export const fetchMonitoringData = async () => {
   return await res.json();
 };
 
+export const finalizeKelasAdmin = async (classId: string, semester: string) => {
+  const res = await fetch(`${API_URL}/admin/rapot/finalize`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({ classId, semester })
+  });
+  if (!res.ok) throw new Error('Failed to finalize class');
+  return await res.json();
+};
+
 // 2. Santri Refs CRUD
 export const fetchSantri = async (filters: { kelasId?: string; status?: string; search?: string }) => {
   const params = new URLSearchParams();
