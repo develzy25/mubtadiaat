@@ -34,7 +34,7 @@ export interface SantriAdmin {
 export interface UserAdmin {
   id: string;
   name: string;
-  email: string;
+  username: string;
   role: number; // 1=Admin, 2=Mundzir, 3=Mufatish, 4=Mustahiq
   password?: string;
   createdAt?: string;

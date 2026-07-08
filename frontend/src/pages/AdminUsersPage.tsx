@@ -31,7 +31,7 @@ import { generateExcelTemplate, exportToExcel, parseExcel, type ExcelColumnConfi
 
 const USER_COLUMNS: ExcelColumnConfig[] = [
   { key: 'name', header: 'Nama Lengkap', width: 30, type: 'text', required: true, example: 'Ahmad Muzakki' },
-  { key: 'email', header: 'Username / Email', width: 25, type: 'text', required: true, example: 'ahmad@mubtadiaat.id' },
+  { key: 'username', header: 'Username', width: 25, type: 'text', required: true, example: 'ahmad' },
   { key: 'role', header: 'ID Role', width: 15, type: 'number', required: true, example: '1=Admin, 2=Mundzir, 3=Mufatish, 4=Mustahiq', note: 'Isi dengan angka 1 sampai 4' },
 ];
 
@@ -92,7 +92,7 @@ export const AdminUsersPage = () => {
   const openEditModal = (user: UserAdmin) => {
     setSelectedUser(user);
     setFormName(user.name);
-    setFormUsername((user.email || '').split('@')[0] || '');
+    setFormUsername(user.username || '');
     setFormRole(user.role || 4);
     setSelectedAlumniId('');
     
@@ -170,7 +170,7 @@ export const AdminUsersPage = () => {
 
     const payload: Partial<UserAdmin> = {
       name: formName.trim(),
-      email: formUsername.includes('@') ? formUsername.trim() : email,
+      username: formUsername.trim(),
       role: formRole
     };
 
@@ -215,10 +215,10 @@ export const AdminUsersPage = () => {
       
       let imported = 0;
       for (const row of data) {
-        if (row.name && row.email) {
+        if (row.name && row.username) {
           await saveUser({
             name: row.name,
-            email: row.email,
+            username: row.username,
             role: Number(row.role) || 4,
           });
           imported++;
@@ -316,13 +316,13 @@ export const AdminUsersPage = () => {
                 <Tbody>
                   {users.filter(u => {
                     if (filterRole !== 'ALL' && u.role !== filterRole) return false;
-                    return u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase());
+                    return u.name.toLowerCase().includes(search.toLowerCase()) || (u.username || '').toLowerCase().includes(search.toLowerCase());
                   }).map(user => (
                     <Tr key={user.id}>
                       <Td>
                         <div className="font-bold text-slate-800">{user.name}</div>
                         <div className="text-[10px] text-slate-400 font-medium mt-0.5">
-                          Username: <span className="font-bold text-slate-500">{(user.email || '').split('@')[0]}</span>
+                          Username: <span className="font-bold text-slate-500">{user.username}</span>
                         </div>
                       </Td>
                       <Td>
@@ -426,7 +426,7 @@ export const AdminUsersPage = () => {
               ))}
             </PremiumSelect>
             <p className="text-[9px] text-slate-400 font-medium">
-              *Memilih alumni akan otomatis mengisi Nama Lengkap, Alamat, dan meng-generate Email.
+              *Memilih alumni akan otomatis mengisi Nama Lengkap, Alamat, dan meng-generate Username.
             </p>
           </div>
         )}
