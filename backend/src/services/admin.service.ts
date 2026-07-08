@@ -3,6 +3,7 @@ import { adminRepository } from '../repositories/admin.repository';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '../db/index';
 import * as schema from '../db/schema';
+import { eq } from 'drizzle-orm';
 
 export class AdminService {
   async getDashboardStats() {
@@ -41,7 +42,22 @@ export class AdminService {
   async createUser(body: any) {
     const id = uuidv4();
     await adminRepository.createUser({ id, ...body });
+    const passwordHash = await (await import('better-auth/crypto')).hashPassword('mubtadiaat123');
+    await db.insert(schema.accounts).values({ id: uuidv4(), userId: id, accountId: body.username, providerId: 'credential', password: passwordHash }).run();
     return { id };
+  }
+
+  async resetUserPassword(id: string) {
+    const user = await db.select().from(schema.users).where(eq(schema.users.id, id)).get();
+    if (!user) throw new Error("User not found");
+    const passwordHash = await (await import('better-auth/crypto')).hashPassword('mubtadiaat123');
+    
+    const account = await db.select().from(schema.accounts).where(eq(schema.accounts.userId, id)).get();
+    if (account) {
+      await db.update(schema.accounts).set({ password: passwordHash }).where(eq(schema.accounts.userId, id)).run();
+    } else {
+      await db.insert(schema.accounts).values({ id: uuidv4(), userId: id, accountId: user.username, providerId: 'credential', password: passwordHash }).run();
+    }
   }
   async updateUser(id: string, body: any) {
     await adminRepository.updateUser(id, body);

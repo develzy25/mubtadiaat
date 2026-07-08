@@ -44,7 +44,8 @@ export const deleteUser = async (c: Context) => {
   return c.json({ success: true });
 };
 export const resetUserPassword = async (c: Context) => {
-  // Mocked for now (was mocked in original too)
+  const id = c.req.param('id') || '';
+  await adminService.resetUserPassword(id);
   return c.json({ success: true });
 };
 export const seedFullData = async (c: Context) => {
