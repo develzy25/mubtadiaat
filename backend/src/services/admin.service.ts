@@ -3,7 +3,7 @@ import { adminRepository } from '../repositories/admin.repository';
 import { v4 as uuidv4 } from 'uuid';
 import { db } from '../db/index';
 import * as schema from '../db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, count } from 'drizzle-orm';
 
 export class AdminService {
   async getDashboardStats() {
