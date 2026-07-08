@@ -16,6 +16,7 @@ mobile.get('/kelas', mobileController.getKelasMustahiq);
 
 // Jadwal Mengajar (Munawwibah/Mustahiq)
 mobile.get('/jadwal', mobileController.getJadwalMengajar);
+mobile.get('/jadwal-kelas/:classId', mobileController.getJadwalByKelas);
 
 // Dashboard Mobile
 mobile.get('/dashboard', mobileController.getDashboard);

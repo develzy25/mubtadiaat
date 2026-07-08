@@ -477,3 +477,28 @@ export const finalisasiKelas = async (c: Context) => {
     return c.json({ success: false, message: 'Failed to finalize class' }, 500);
   }
 };
+
+export const getJadwalByKelas = async (c: Context) => {
+  const classId = c.req.param('classId');
+  if (!classId) return c.json({ success: false, message: 'Class ID required' }, 400);
+
+  try {
+    const list = await db.select({
+      id: schema.jadwalPelajaran.id,
+      kelasId: schema.jadwalPelajaran.kelasId,
+      hari: schema.jadwalPelajaran.hari,
+      sesi: schema.jadwalPelajaran.sesi,
+      kitabId: schema.jadwalPelajaran.kitabId,
+      kitab: schema.kitab.name,
+    })
+    .from(schema.jadwalPelajaran)
+    .innerJoin(schema.kitab, eq(schema.jadwalPelajaran.kitabId, schema.kitab.id))
+    .where(eq(schema.jadwalPelajaran.kelasId, classId));
+
+    return c.json({ success: true, data: list });
+  } catch (error: any) {
+    console.error("Error getJadwalByKelas:", error);
+    return c.json({ success: false, message: 'Failed to fetch class schedule' }, 500);
+  }
+};
+

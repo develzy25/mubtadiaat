@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from 'react';
 import { FileSpreadsheet, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { fetchKelasMustahiq, fetchPenilaianKelas, savePenilaianKuartal, fetchJadwalMengajar } from '../../services/guru.service';
+import { fetchKelasMustahiq, fetchPenilaianKelas, savePenilaianKuartal, fetchJadwalKelas } from '../../services/guru.service';
 import { PremiumButton } from '../../components/ui/PremiumButton';
 
 const KUARTAL_OPTIONS = [
@@ -21,7 +20,6 @@ const FALLBACK_MAPEL_OPTIONS = [
 
 export const GuruPenilaian = () => {
   const [classes, setClasses] = useState<any[]>([]);
-  const [jadwal, setJadwal] = useState<any[]>([]);
   const [mapelOptions, setMapelOptions] = useState<any[]>([]);
   
   const [scores, setScores] = useState<any[]>([]);
@@ -34,14 +32,11 @@ export const GuruPenilaian = () => {
   const [activeClassId, setActiveClassId] = useState<string | null>(null);
   const [className, setClassName] = useState<string>('');
 
-  // 1. Initial Load of classes and teaching schedules
+  // 1. Initial Load of classes
   useEffect(() => {
     const initData = async () => {
       try {
-        const [classRes, jadwalRes] = await Promise.all([
-          fetchKelasMustahiq(),
-          fetchJadwalMengajar()
-        ]);
+        const classRes = await fetchKelasMustahiq();
 
         if (classRes?.success && classRes.data.length > 0) {
           setClasses(classRes.data);
@@ -51,49 +46,55 @@ export const GuruPenilaian = () => {
         } else {
           setError('Tidak ada kelas yang aktif untuk Anda.');
         }
-
-        if (jadwalRes?.success) {
-          setJadwal(jadwalRes.data);
-        }
       } catch (err) {
         console.error(err);
-        setError('Terjadi kesalahan koneksi saat memuat kelas & jadwal.');
+        setError('Terjadi kesalahan koneksi saat memuat kelas.');
       }
     };
     initData();
   }, []);
 
-  // 2. Filter mapel dynamically based on the selected class
+  // 2. Fetch full class schedule and filter mapel dynamically based on the selected class
   useEffect(() => {
     if (!activeClassId) return;
 
-    const selectedClass = classes.find(c => c.id === activeClassId);
-    if (selectedClass) {
-      setClassName(selectedClass.bagian ? `Kelas ${selectedClass.bagian} (${selectedClass.lokal || ''})` : 'Kelas Aktif');
-    }
-
-    // Filter books taught by this teacher in the active class
-    const classJadwal = jadwal.filter(j => j.kelasId === activeClassId);
-    
-    // Map unique kitab values
-    const uniqueKitabs: any[] = [];
-    const seen = new Set();
-    classJadwal.forEach(j => {
-      if (j.kitabId && !seen.has(j.kitabId)) {
-        seen.add(j.kitabId);
-        uniqueKitabs.push({ id: j.kitabId, name: j.kitab });
+    const loadClassScheduleAndMapel = async () => {
+      const selectedClass = classes.find(c => c.id === activeClassId);
+      if (selectedClass) {
+        setClassName(selectedClass.bagian ? `Kelas ${selectedClass.bagian} (${selectedClass.lokal || ''})` : 'Kelas Aktif');
       }
-    });
 
-    // Fallback if no matching schedules
-    const options = uniqueKitabs.length > 0 ? uniqueKitabs : FALLBACK_MAPEL_OPTIONS;
-    setMapelOptions(options);
+      try {
+        const res = await fetchJadwalKelas(activeClassId);
+        if (res?.success) {
+          const uniqueKitabs: any[] = [];
+          const seen = new Set();
+          res.data.forEach((j: any) => {
+            if (j.kitabId && !seen.has(j.kitabId)) {
+              seen.add(j.kitabId);
+              uniqueKitabs.push({ id: j.kitabId, name: j.kitab });
+            }
+          });
 
-    // Set first mapel as active if current is not in options
-    if (options.length > 0 && (!activeMapel || !options.some(o => o.id === activeMapel))) {
-      setActiveMapel(options[0].id);
-    }
-  }, [activeClassId, classes, jadwal, activeMapel]);
+          const options = uniqueKitabs.length > 0 ? uniqueKitabs : FALLBACK_MAPEL_OPTIONS;
+          setMapelOptions(options);
+
+          // Set first mapel as active if current is not in options
+          if (options.length > 0 && (!activeMapel || !options.some(o => o.id === activeMapel))) {
+            setActiveMapel(options[0].id);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load class schedule:", err);
+        setMapelOptions(FALLBACK_MAPEL_OPTIONS);
+        if (!activeMapel) {
+          setActiveMapel(FALLBACK_MAPEL_OPTIONS[0].id);
+        }
+      }
+    };
+
+    loadClassScheduleAndMapel();
+  }, [activeClassId, classes]);
 
   // 3. Load students and grades when class, subject, or kuartal changes
   useEffect(() => {
