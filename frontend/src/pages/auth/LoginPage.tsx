@@ -37,9 +37,9 @@ export const LoginPage = () => {
         
         const userRole = (authData?.user as any)?.role;
         if (userRole === 1) {
-          navigate('/admin/dashboard');
-        } else {
           navigate('/dashboard');
+        } else {
+          navigate('/guru/dashboard');
         }
       }
     } catch (err: any) {
