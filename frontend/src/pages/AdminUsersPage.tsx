@@ -92,7 +92,7 @@ export const AdminUsersPage = () => {
   const openEditModal = (user: UserAdmin) => {
     setSelectedUser(user);
     setFormName(user.name);
-    setFormUsername(user.email.split('@')[0] || '');
+    setFormUsername((user.email || '').split('@')[0] || '');
     setFormRole(user.role || 4);
     setSelectedAlumniId('');
     
@@ -322,7 +322,7 @@ export const AdminUsersPage = () => {
                       <Td>
                         <div className="font-bold text-slate-800">{user.name}</div>
                         <div className="text-[10px] text-slate-400 font-medium mt-0.5">
-                          Username: <span className="font-bold text-slate-500">{user.email.split('@')[0]}</span>
+                          Username: <span className="font-bold text-slate-500">{(user.email || '').split('@')[0]}</span>
                         </div>
                       </Td>
                       <Td>
